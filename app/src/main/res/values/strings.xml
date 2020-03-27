@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">EarthQuakePlayer2</string>
+    <string name="title_activity_main">MainActivity</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+
+    <string name="title_main">Earthquake Player</string>
+
+    <string name="dialog_notice">안내</string>
+    <string name="dialog_request">요청</string>
+    <string name="dialog_cancel">취소</string>
+    <string name="dialog_permission_body">앱의 사용을 위해서는 미디어 접근 권한이 필요합니다.\n[다시보지않기]를 설정하신 경우에는 앱정보>권한 승인 후 이용해주세요.\n\n취소 시에는 앱이 종료 됩니다.</string>
+
+    <!-- Allowed caller template -->
+    <string name="allowed_caller_log">
+        Caller has a valid certificate, but its package doesn\'t match any expected package for the
+        given certificate. To allow this caller, add the following to the allowed callers list:\n
+        <![CDATA[
+        <signature name=\"%1$s\" package=\"%2$s\">\n\t<key>%3$s</key>\n</signature>\n
+        ]]>
+    </string>
+</resources>

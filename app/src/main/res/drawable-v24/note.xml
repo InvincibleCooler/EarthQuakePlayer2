@@ -1,0 +1,36 @@
+<!-- drawable/home_outline.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <group
+        android:pivotX="12"
+        android:pivotY="12"
+        android:rotation="-10">
+
+        <path
+            android:fillColor="#000"
+            android:pathData="M 2.33,20 a 3,2,0,1,1,7,0 a 3,2 0,1 1,-7 0 z" />
+
+        <path
+            android:fillColor="#000"
+            android:pathData="M 15,18 a 3,2,0,1,1,7,0 a 3,2 0,1 1,-7 0 z" />
+    </group>
+
+
+    <path
+        android:fillColor="#000"
+        android:pathData="M 7.8,20 V4.7h3v15.8 z" />
+
+    <path
+        android:fillColor="#000"
+        android:pathData="M 19.91,18 V3.5h3v13 z" />
+
+    <path
+        android:fillColor="#000"
+        android:pathData="M 7.8,4.7 L 22.91,3v3L7.8,7.7 z" />
+
+    <!-- https://www.w3.org/TR/SVG/paths.html#PathDataEllipticalArcCommands -->
+</vector>
