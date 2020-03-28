@@ -26,14 +26,14 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
 
     override fun onBackStackChanged() {
         if (DebugConstant.DEBUG) {
-            val sb = StringBuilder("[FragmentManager Stack]--------------------\n")
+            val sb = StringBuilder("\n[FragmentManager Stack]--------------------\n")
             val fm = supportFragmentManager
             val count = fm.backStackEntryCount
             for (idx in count - 1 downTo 0) {
                 val entry = fm.getBackStackEntryAt(idx)
                 val f: Fragment? = fm.findFragmentByTag(entry.name)
                 if (f != null) {
-                    sb.append("[").append(idx).append("]").append(f).append("\n")
+                    sb.append("[").append(idx).append("]").append(entry.name).append("\n")
                 }
             }
             sb.append("-------------------------------------------")
@@ -42,19 +42,21 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
     }
 
     @Synchronized
-    open fun addFragment(fragment: Fragment, fragmentTag: String?) {
+    open fun addFragment(fragment: Fragment, tag: String?) {
         val fm = supportFragmentManager
         val ft = fm.beginTransaction()
-        ft.add(R.id.fragment, fragment, fragmentTag)
+        ft.add(R.id.fragment, fragment, tag)
+        ft.addToBackStack(tag)
         ft.commitAllowingStateLoss()
         fm.executePendingTransactions()
     }
 
     @Synchronized
-    open fun replaceFragment(fragment: Fragment, fragmentTag: String?) {
+    open fun replaceFragment(fragment: Fragment, tag: String?) {
         val fm = supportFragmentManager
         val ft = fm.beginTransaction()
-        ft.replace(R.id.fragment, fragment, fragmentTag)
+        ft.replace(R.id.fragment, fragment, tag)
+        ft.addToBackStack(tag)
         ft.commitAllowingStateLoss()
         fm.executePendingTransactions()
     }
