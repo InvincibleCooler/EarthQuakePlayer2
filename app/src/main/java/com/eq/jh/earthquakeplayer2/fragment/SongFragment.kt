@@ -24,7 +24,6 @@ import com.eq.jh.earthquakeplayer2.playback.MusicService
 import com.eq.jh.earthquakeplayer2.playback.data.AbstractMusicSource
 import com.eq.jh.earthquakeplayer2.rxbus.RxBus
 import com.eq.jh.earthquakeplayer2.rxbus.RxBusEvent
-import com.eq.jh.earthquakeplayer2.utils.ScreenUtils
 import com.eq.ljh.flags.constants.MediaBrowserIdConstant
 
 /**
@@ -170,14 +169,6 @@ class SongFragment : BaseFragment() {
     }
 
     private inner class SongAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        private var thumbnailWidth = 0
-        private var thumbnailHeight = 0
-
-        init {
-            thumbnailWidth = ScreenUtils.dipToPixel(activity, 48f)
-            thumbnailHeight = ScreenUtils.dipToPixel(activity, 48f)
-        }
-
         private var items = mutableListOf<MediaBrowserCompat.MediaItem>()
 
         fun setItems(items: MutableList<MediaBrowserCompat.MediaItem>) {
