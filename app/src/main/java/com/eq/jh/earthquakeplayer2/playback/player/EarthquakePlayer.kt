@@ -3,6 +3,7 @@ package com.eq.jh.earthquakeplayer2.playback.player
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import android.view.SurfaceHolder
 import com.eq.jh.earthquakeplayer2.rxbus.RxBus
 import com.eq.jh.earthquakeplayer2.rxbus.RxBusEvent
 import com.google.android.exoplayer2.C
@@ -93,6 +94,10 @@ class EarthquakePlayer(val context: Context) {
 
     fun isPlaying(): Boolean {
         return simpleExoPlayer.playWhenReady
+    }
+
+    fun setDisplay(sh: SurfaceHolder?) {
+        simpleExoPlayer.setVideoSurfaceHolder(sh)
     }
 
     // Util stuff function

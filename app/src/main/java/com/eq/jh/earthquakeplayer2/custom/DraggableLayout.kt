@@ -28,25 +28,23 @@ import kotlin.math.min
  */
 class DraggableLayout : ViewGroup {
     companion object {
-        const val TAG = "DraggableViewLayout"
+        const val TAG = "DraggableLayout"
 
-        private const val INVALID_POINTER = -1
+        private const val VIDEO_STATUS_MAXIMIZED = 0
+        private const val VIDEO_STATUS_DRAGGING = 1
+        private const val VIDEO_STATUS_MINIMIZED = 2
+        private const val VIDEO_STATUS_CLOSED = 3
 
-//        private const val VIDEO_STATUS_MAXIMIZED = 0
-//        private const val VIDEO_STATUS_DRAGGING = 1
-//        private const val VIDEO_STATUS_MINIMIZED = 2
-//        private const val VIDEO_STATUS_CLOSED = 3
-//
-//        private const val DIRECTION_IDLE = 0
-//        private const val DIRECTION_VERTICAL = ViewDragHelper.DIRECTION_VERTICAL
-//        private const val DIRECTION_HORIZONTAL = ViewDragHelper.DIRECTION_HORIZONTAL
+        private const val DIRECTION_IDLE = 0
+        private const val DIRECTION_VERTICAL = ViewDragHelper.DIRECTION_VERTICAL
+        private const val DIRECTION_HORIZONTAL = ViewDragHelper.DIRECTION_HORIZONTAL
     }
 
     private lateinit var dragHelper: ViewDragHelper
     private lateinit var dragView: View // 상단뷰 : 유투브로 치면 영상이 나오는 곳
     private lateinit var infoView: View // 하단뷰 : 상단뷰를 제외한 나머지 뷰
 
-    private var activePointerId = INVALID_POINTER
+    private var activePointerId = ViewDragHelper.INVALID_POINTER
     private var verticalDragRange = 0 // 영상뷰가 아래쪽으로 내려갈수 있는 범위
     private var verticalDragRate = 0f // 하단 recyclerview의 alpha값 측정을 위해서 사용
 
@@ -231,7 +229,7 @@ class DraggableLayout : ViewGroup {
         }
 
         activePointerId = ev.getPointerId(ev.actionIndex)
-        if (activePointerId == INVALID_POINTER) {
+        if (activePointerId == ViewDragHelper.INVALID_POINTER) {
             return false
         }
 

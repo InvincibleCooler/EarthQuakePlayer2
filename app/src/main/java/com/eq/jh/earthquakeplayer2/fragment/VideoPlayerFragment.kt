@@ -3,12 +3,9 @@ package com.eq.jh.earthquakeplayer2.fragment
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -16,7 +13,6 @@ import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.playback.data.AbstractMusicSource
 import com.eq.jh.earthquakeplayer2.playback.player.EarthquakePlayer
 import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.ui.PlayerView
 
 /**
  * Copyright (C) 2020 LOEN Entertainment Inc. All rights reserved.
@@ -41,7 +37,9 @@ class VideoPlayerFragment : BaseFragment() {
         private const val VIEW_TYPE_ITEM = 1
     }
 
-    private lateinit var playerView: PlayerView
+    private lateinit var surfaceView: SurfaceView
+    private lateinit var surfaceHolder: SurfaceHolder
+
     private lateinit var recyclerView: RecyclerView
     private lateinit var infoAdapter: InfoAdapter
     private var player: EarthquakePlayer? = null
@@ -53,7 +51,7 @@ class VideoPlayerFragment : BaseFragment() {
         super.onCreate(savedInstanceState)
 
         activity?.let {
-            createPlayer(it);
+            createPlayer(it)
             infoAdapter = InfoAdapter(it)
         }
     }
@@ -105,28 +103,42 @@ class VideoPlayerFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        playerView = view.findViewById(R.id.player_view)
+        surfaceView = view.findViewById(R.id.surface_view)
         recyclerView = view.findViewById(R.id.recycler_view)
+
+        surfaceHolder = surfaceView.holder
+        surfaceHolder.addCallback(object : SurfaceHolder.Callback {
+            override fun surfaceCreated(holder: SurfaceHolder?) {
+                Log.d(TAG, "onViewCreated surfaceCreated")
+                player?.setDisplay(holder)
+            }
+
+            override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
+                Log.d(TAG, "onViewCreated surfaceChanged")
+                player?.setDisplay(holder)
+            }
+
+            override fun surfaceDestroyed(holder: SurfaceHolder?) {
+                Log.d(TAG, "onViewCreated surfaceDestroyed")
+                player?.setDisplay(null)
+            }
+        })
+
         recyclerView.run {
             layoutManager = LinearLayoutManager(context)
             adapter = infoAdapter
             setHasFixedSize(true)
         }
 
-        playerView.player = player?.getPlayer()
-
+        // scoped storage를 아래처럼 처리해야 하나?
+        // Log.d(TAG, "onViewCreated Environment.isExternalStorageLegacy() : ${Environment.isExternalStorageLegacy()}")
         val contentUri = Uri.parse(mediaMetadataCompat?.getString(AbstractMusicSource.CUSTOM_METADATA_TRACK_SOURCE))
-        player?.setDataSource(contentUri)
         Log.d(TAG, "onViewCreated contentUri : $contentUri")
-        Log.d(TAG, "onViewCreated Environment.isExternalStorageLegacy() : ${Environment.isExternalStorageLegacy()}")
-//
-//        activity?.let {
-//            it.contentResolver.openInputStream(contentUri)?.use {
-//
-//            }
-//        }
+        player?.setDataSource(contentUri)
 
-//        player?.setDataSource()
+        surfaceView.setOnClickListener {
+            // toggle control view
+        }
 
     }
 
