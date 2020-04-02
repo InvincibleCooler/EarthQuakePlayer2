@@ -153,7 +153,7 @@ class MusicService : MediaBrowserServiceCompat() {
                             setMediaId(mediaId)
                             setExtras(bundle)
                         }.build()
-                        mediaItemList.add(MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_BROWSABLE))
+                        mediaItemList += MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_BROWSABLE)
                     }
                     result.sendResult(mediaItemList)
                 } else {
@@ -190,7 +190,7 @@ class MusicService : MediaBrowserServiceCompat() {
                             setMediaId(mediaId)
                             setExtras(bundle)
                         }.build()
-                        mediaItemList.add(MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_BROWSABLE))
+                        mediaItemList += MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_BROWSABLE)
                     }
                     result.sendResult(mediaItemList)
                 } else {

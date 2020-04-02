@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="draggable_layout">
+        <attr name="top_view_id" />
+        <attr name="bottom_view_id" />
+        <attr name="window_margin" format="dimension" />
+    </declare-styleable>
+
+</resources>

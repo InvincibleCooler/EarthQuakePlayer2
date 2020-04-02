@@ -1,5 +1,6 @@
 package com.eq.jh.earthquakeplayer2.fragment
 
+import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import com.eq.jh.earthquakeplayer2.BaseActivity
@@ -15,6 +16,13 @@ open class BaseFragment : Fragment() {
         const val TAG = "BaseFragment"
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val instanceState = savedInstanceState ?: arguments
+        onRestoreInstanceState(instanceState)
+    }
+
     open fun open(fragment: BaseFragment, tag: String) {
         Log.d(TAG, "open() f:$fragment tag:$tag")
 
@@ -23,5 +31,9 @@ open class BaseFragment : Fragment() {
                 it.addFragment(fragment, tag)
             }
         }
+    }
+
+    open fun onRestoreInstanceState(inState: Bundle?) {
+
     }
 }

@@ -39,7 +39,7 @@ class MainActivity : BaseActivity() {
             }
             .count()
             .subscribe { permissionCount: Long?, _: Throwable? ->
-                if (permissionCount == 0L) {//zero means all permissions granted
+                if (permissionCount == 0L) { //zero means all permissions granted
                     initView()
                 } else {
                     val title = getString(R.string.dialog_notice)

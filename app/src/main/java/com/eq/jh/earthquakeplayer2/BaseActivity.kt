@@ -42,7 +42,7 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
     }
 
     @Synchronized
-    open fun addFragment(fragment: Fragment, tag: String?) {
+    open fun addFragment(fragment: Fragment, tag: String) {
         val fm = supportFragmentManager
         val ft = fm.beginTransaction()
         ft.add(R.id.fragment, fragment, tag)
@@ -52,7 +52,7 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
     }
 
     @Synchronized
-    open fun replaceFragment(fragment: Fragment, tag: String?) {
+    open fun replaceFragment(fragment: Fragment, tag: String) {
         val fm = supportFragmentManager
         val ft = fm.beginTransaction()
         ft.replace(R.id.fragment, fragment, tag)

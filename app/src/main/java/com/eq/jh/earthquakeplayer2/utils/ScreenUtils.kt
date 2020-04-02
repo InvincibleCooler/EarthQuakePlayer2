@@ -26,6 +26,20 @@ class ScreenUtils {
             }
             return 0
         }
+
+        fun getScreenWidth(context: Context?): Int {
+            context?.let {
+                return context.resources.displayMetrics.widthPixels
+            }
+            return 0
+        }
+
+        fun getScreenHeight(context: Context?): Int {
+            context?.let {
+                return context.resources.displayMetrics.heightPixels
+            }
+            return 0
+        }
     }
 
 }
