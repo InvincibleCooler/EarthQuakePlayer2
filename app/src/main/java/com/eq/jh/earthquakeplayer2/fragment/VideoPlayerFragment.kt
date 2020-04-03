@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.eq.jh.earthquakeplayer2.R
+import com.eq.jh.earthquakeplayer2.custom.VideoPlayerControlView
 import com.eq.jh.earthquakeplayer2.playback.data.AbstractMusicSource
 import com.eq.jh.earthquakeplayer2.playback.player.EarthquakePlayer
 import com.google.android.exoplayer2.Player
@@ -137,8 +138,14 @@ class VideoPlayerFragment : BaseFragment() {
         player?.setDataSource(contentUri)
 
         surfaceView.setOnClickListener {
-            // toggle control view
+            Log.d(TAG, "surfaceView click")
         }
+
+        view.findViewById<VideoPlayerControlView>(R.id.control_view).setControlViewCallback(object : VideoPlayerControlView.ControlViewCallback {
+            override fun onPlayClick() {
+                Log.d(TAG, "VideoPlayerControlView onPlayClick")
+            }
+        })
 
     }
 

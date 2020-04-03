@@ -25,6 +25,11 @@
                 android:id="@+id/surface_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
+
+            <com.eq.jh.earthquakeplayer2.custom.VideoPlayerControlView
+                android:id="@+id/control_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
         </FrameLayout>
 
         <FrameLayout
