@@ -1,6 +1,7 @@
 package com.eq.jh.earthquakeplayer2.custom
 
 import android.content.Context
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -11,7 +12,6 @@ import androidx.core.view.ViewCompat
 import androidx.customview.widget.ViewDragHelper
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.utils.ScreenUtils
-import java.lang.Float.isNaN
 import kotlin.math.max
 import kotlin.math.min
 
@@ -20,6 +20,7 @@ import kotlin.math.min
  * Copyright (C) 2020 LOEN Entertainment Inc. All rights reserved.
  *
  * Created by Invincible on 2020-03-28
+ * 참고
  * https://m.blog.naver.com/PostView.nhn?blogId=pluulove84&logNo=100199406955&proxyReferer=https%3A%2F%2Fwww.google.co.kr%2F
  * https://darksilber.tistory.com/135
  * http://i5on9i.blogspot.com/2013/10/android-viewdraghelper.html
@@ -49,8 +50,10 @@ class DraggableLayout : ViewGroup {
     private var verticalDragRate = 0f // 하단 recyclerview의 alpha값 측정을 위해서 사용
 
     private var offsetVertical = 0 // onViewPositionChanged 의 dy의 누적값을 저장하기 위한 값
+    private var minimizedWidth = 0 // 상단뷰가 가장 작아졌을때 너비
     private var minimizedHeight = 0 // 상단뷰가 가장 작아졌을때 높이
-    private var minimizedScaleY = 0f
+    private var minimizedScaleX = 0f // 상단뷰가 가장 작아졌을때의 screen 너비에 대한 비율
+    private var minimizedScaleY = 0f // 상단뷰가 가장 작아졌을때의 screen 높이에 대한 비율
     /**
      * Minimum velocity to initiate a fling, as measured in pixels per second
      * ViewConfiguration 에서 정해 놓은 값을 사용하자
@@ -70,6 +73,7 @@ class DraggableLayout : ViewGroup {
      * 스크롤 하는 뷰 여기서는 tryCaptureView 가 중간아래인지 위인지 판단하기 위해서
      */
     private var windowMargin = 0f
+    private var minimizedMargin = Rect()
 
     constructor(context: Context) : super(context) {
         init()
@@ -80,9 +84,15 @@ class DraggableLayout : ViewGroup {
 
         topViewId = a.getResourceId(R.styleable.draggable_layout_top_view_id, 0)
         bottomViewId = a.getResourceId(R.styleable.draggable_layout_bottom_view_id, 0)
+        minimizedMargin.left = a.getDimensionPixelSize(R.styleable.draggable_layout_top_view_margin_left, 0)
+        minimizedMargin.right = a.getDimensionPixelSize(R.styleable.draggable_layout_top_view_margin_right, 0)
+        minimizedMargin.bottom = a.getDimensionPixelSize(R.styleable.draggable_layout_top_view_margin_bottom, 0)
         windowMargin = a.getDimension(R.styleable.draggable_layout_window_margin, 0f)
 
         Log.d(TAG, "constructor topViewId : $topViewId, bottomViewId : $bottomViewId")
+        Log.d(TAG, "constructor minimizedMargin.left : ${minimizedMargin.left}")
+        Log.d(TAG, "constructor minimizedMargin.right : ${minimizedMargin.right}")
+        Log.d(TAG, "constructor minimizedMargin.bottom : ${minimizedMargin.bottom}")
         Log.d(TAG, "constructor windowMargin : $windowMargin")
 
         a.recycle()
@@ -92,16 +102,17 @@ class DraggableLayout : ViewGroup {
 
     private fun init() {
         dragHelper = ViewDragHelper.create(this, 1f, dragCallback)
+        minimizedWidth = ScreenUtils.getScreenWidth(context) - minimizedMargin.left - minimizedMargin.right
         minimizedHeight = ScreenUtils.dipToPixel(context, 80f)
+        Log.d(TAG, "init minimizedWidth : $minimizedWidth, minimizedHeight : $minimizedHeight")
 
         val configuration = ViewConfiguration.get(context)
-        minVelocity = configuration.scaledMinimumFlingVelocity // for debugging 131
-        touchSlop = configuration.scaledPagingTouchSlop // for debugging 42
+        minVelocity = configuration.scaledMinimumFlingVelocity // for debugging : value is 131 based on gallaxy note9
+        touchSlop = configuration.scaledPagingTouchSlop // for debugging : value is 42 based on gallaxy note9
         Log.d(TAG, "init minVelocity : $minVelocity, touchSlop : $touchSlop")
     }
 
     private val dragCallback = object : ViewDragHelper.Callback() {
-
         // return true means this view is drag target
         override fun tryCaptureView(child: View, pointerId: Int): Boolean {
             return child == dragView
@@ -117,7 +128,7 @@ class DraggableLayout : ViewGroup {
             return newTop
         }
 
-        override fun clampViewPositionHorizontal(child: View, left: Int, dx: Int): Int {
+        override fun clampViewPositionHorizontal(child: View, left: Int, dx: Int): Int { // 필요 없어서 따로 구현안함
             Log.d(TAG, "clampViewPositionHorizontal left : $left, dx : $dx")
             return super.clampViewPositionHorizontal(child, left, dx)
         }
@@ -128,6 +139,7 @@ class DraggableLayout : ViewGroup {
 
         /**
          * user가 손을 놓았을 경우 max로 만들지 min으로 만들지 판단하자
+         * 위 아래로만 움직이기 때문에 yvel(y축 속도)만 필요함
          */
         override fun onViewReleased(releasedChild: View, xvel: Float, yvel: Float) {
             super.onViewReleased(releasedChild, xvel, yvel)
@@ -143,7 +155,6 @@ class DraggableLayout : ViewGroup {
                 settleCapturedViewAt(releasedChild.left, startY + verticalDragRange)
             } else { // 천천히 움직이고 어느순간 손을 놓는 경우
                 Log.d(TAG, "onViewReleased releasedChild.top : ${releasedChild.top}")
-                Log.d(TAG, "onViewReleased (ScreenUtils.getScreenHeight(context) - windowMargin - releasedChild.measuredHeight) / 2 : ${(ScreenUtils.getScreenHeight(context) - windowMargin - releasedChild.measuredHeight) / 2}")
                 val moveHalf = (ScreenUtils.getScreenHeight(context) - windowMargin - releasedChild.measuredHeight) / 2
                 // 상단뷰가 1/2보다 내려왔으면 min, vice versa
                 if (moveHalf < releasedChild.top) {
@@ -170,14 +181,13 @@ class DraggableLayout : ViewGroup {
             verticalDragRate = if (verticalDragRange == 0) 0f else offsetVertical / verticalDragRange.toFloat()
             Log.d(TAG, "onViewPositionChanged offsetVertical : $offsetVertical, verticalDragRate : $verticalDragRate")
 
-            infoView.alpha = 1f - verticalDragRate
-
             // 상단뷰를 조금씩 줄인다
             changedView.run {
                 pivotX = width.toFloat()
                 pivotY = height.toFloat()
-                scaleX = 1f
+                scaleX = computeScaleX()
                 scaleY = computeScaleY()
+                translationX = -minimizedMargin.right * verticalDragRate
             }
             // 하단뷰를 아래로 움직인다.
             infoView.offsetTopAndBottom(dy)
@@ -293,12 +303,14 @@ class DraggableLayout : ViewGroup {
         )
     }
 
+    private fun computeScaleX(): Float {
+        return 1f + verticalDragRate * (minimizedScaleX - 1f)
+    }
+
     private fun computeScaleY(): Float {
         return 1f + verticalDragRate * (minimizedScaleY - 1f)
     }
 
-    // settleCapturedViewAt 을 호출했을 때 animation 이 계속 되도록 하려면,
-    // computeScroll 에서 아래와 같은 코드가 작성되어야 한다.
     /**
      * To ensure the animation is going to work this method has been override to call
      * postInvalidateOnAnimation if the view is not settled yet.
@@ -311,9 +323,6 @@ class DraggableLayout : ViewGroup {
             ViewCompat.postInvalidateOnAnimation(this)
         }
     }
-
-    private var topContainerWidth = 0
-    private var topContainerHeight = 0
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -339,9 +348,12 @@ class DraggableLayout : ViewGroup {
             )
         }
 
-        verticalDragRange = height - dragViewHeight
+        verticalDragRange = height - dragViewHeight - minimizedMargin.bottom
         Log.d(TAG, "onMeasure verticalDragRange : $verticalDragRange")
     }
+
+    private var topContainerWidth = 0
+    private var topContainerHeight = 0
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         Log.d(TAG, "onLayout l : $l, t : $t, r : rt, b : $b")
@@ -351,15 +363,12 @@ class DraggableLayout : ViewGroup {
         dragView.run {
             topContainerWidth = measuredWidth
             topContainerHeight = measuredHeight
-            Log.d(TAG, "onLayout dragView topContainerHeight : $topContainerHeight")
             Log.d(TAG, "onLayout dragView measuredWidth : $measuredWidth measuredHeight : $measuredHeight")
             layout(left, top, left + measuredWidth, top + measuredHeight)
 
+            minimizedScaleX = minimizedWidth / measuredWidth.toFloat()
             minimizedScaleY = minimizedHeight / measuredHeight.toFloat()
-            Log.d(TAG, "onLayout dragView minimizedScaleY : $minimizedScaleY")
-            if (isNaN(minimizedScaleY)) {
-                minimizedScaleY = 0f
-            }
+            Log.d(TAG, "onLayout dragView minimizedScaleX $minimizedScaleX, minimizedScaleY : $minimizedScaleY")
         }
 
         // infoView는 dragView height 만큼 밑으로 내리자
