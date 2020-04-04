@@ -52,7 +52,7 @@ class VideoPlayerControlView : LinearLayout, View.OnClickListener {
         }
     }
 
-    fun togglePlayOrPause(isPlay: Boolean) {
-        playIv.setImageResource(if (isPlay) R.drawable.btn_pause else R.drawable.btn_play)
+    fun togglePlayOrPause(isPlaying: Boolean) {
+        playIv.setImageResource(if (isPlaying) R.drawable.btn_pause else R.drawable.btn_play)
     }
 }

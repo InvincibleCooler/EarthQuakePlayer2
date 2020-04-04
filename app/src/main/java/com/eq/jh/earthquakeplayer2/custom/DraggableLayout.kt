@@ -28,6 +28,7 @@ import kotlin.math.min
  * http://i5on9i.blogspot.com/2013/10/android-viewdraghelper.html
  * https://github.com/pedrovgs/DraggablePanel
  * https://github.com/ikew0ng/SwipeBackLayout/blob/master/library/src/main/java/me/imid/swipebacklayout/lib/ViewDragHelper.java
+ * https://developer.android.com/training/gestures/viewgroup?hl=ko
  *
  */
 class DraggableLayout : ViewGroup {

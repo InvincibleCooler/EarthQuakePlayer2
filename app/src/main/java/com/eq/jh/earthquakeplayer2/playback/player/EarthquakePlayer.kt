@@ -134,9 +134,8 @@ class EarthquakePlayer(val context: Context) {
     }
 
     fun release() {
-        simpleExoPlayer.stop(true)
-        simpleExoPlayer.removeListener(eventListener)
         simpleExoPlayer.release()
+        simpleExoPlayer.removeListener(eventListener)
         // should be null outside of the player
     }
 

@@ -40,6 +40,7 @@ class VideoPlayerFragment : BaseFragment() {
 
     private lateinit var surfaceView: SurfaceView
     private lateinit var surfaceHolder: SurfaceHolder
+    private lateinit var controlView: VideoPlayerControlView
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var infoAdapter: InfoAdapter
@@ -58,10 +59,16 @@ class VideoPlayerFragment : BaseFragment() {
     }
 
     private fun createPlayer(context: Context) {
+        Log.d(TAG, "createPlayer")
+
         player = EarthquakePlayer(context)
         player?.setCallback(object : EarthquakePlayer.ExoPlayerCallback {
             override fun onCompletion() {
                 Log.d(TAG, "onCompletion()")
+                // seekTo followed by pause, order is important?
+                player?.seekTo(0)
+                player?.pause()
+                controlView.togglePlayOrPause(false)
             }
 
             override fun onPlaybackStatusChanged(state: Int) {
@@ -69,7 +76,7 @@ class VideoPlayerFragment : BaseFragment() {
                 if (state == Player.STATE_READY) {
                     if (!isPrepared) {
                         player?.start()
-
+                        controlView.togglePlayOrPause(true)
                         isPrepared = true
                     }
                 }
@@ -83,8 +90,7 @@ class VideoPlayerFragment : BaseFragment() {
 
     override fun onDestroy() {
         Log.d(TAG, "onDestroy")
-        player?.release()
-        player = null
+        releasePlayer()
         super.onDestroy()
     }
 
@@ -94,7 +100,6 @@ class VideoPlayerFragment : BaseFragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putParcelable(ARG_MEDIA_META_DATA_COMPAT, mediaMetadataCompat)
-        Log.d(TAG, "onSaveInstanceState mediaMetadataCompat : $mediaMetadataCompat")
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -105,22 +110,20 @@ class VideoPlayerFragment : BaseFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         surfaceView = view.findViewById(R.id.surface_view)
+        controlView = view.findViewById(R.id.control_view)
         recyclerView = view.findViewById(R.id.recycler_view)
 
         surfaceHolder = surfaceView.holder
         surfaceHolder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder?) {
-                Log.d(TAG, "onViewCreated surfaceCreated")
                 player?.setDisplay(holder)
             }
 
             override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
-                Log.d(TAG, "onViewCreated surfaceChanged")
                 player?.setDisplay(holder)
             }
 
             override fun surfaceDestroyed(holder: SurfaceHolder?) {
-                Log.d(TAG, "onViewCreated surfaceDestroyed")
                 player?.setDisplay(null)
             }
         })
@@ -143,10 +146,32 @@ class VideoPlayerFragment : BaseFragment() {
 
         view.findViewById<VideoPlayerControlView>(R.id.control_view).setControlViewCallback(object : VideoPlayerControlView.ControlViewCallback {
             override fun onPlayClick() {
-                Log.d(TAG, "VideoPlayerControlView onPlayClick")
+                Log.d(TAG, "onPlayClick isPrepared : $isPrepared")
+                if (!isPrepared) {
+                    return
+                }
+
+                val isPlaying = isPlaying()
+                Log.d(TAG, "onPlayClick isPlaying() : ${isPlaying()}")
+
+                if (isPlaying) {
+                    player?.pause()
+                } else {
+                    player?.start()
+                }
+                controlView.togglePlayOrPause(!isPlaying)
             }
         })
+    }
 
+    private fun isPlaying(): Boolean {
+        return player?.isPlaying() ?: false
+    }
+
+    private fun releasePlayer() {
+        player?.release()
+        player = null
+        isPrepared = false
     }
 
     private inner class InfoAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
