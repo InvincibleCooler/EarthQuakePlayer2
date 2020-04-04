@@ -8,10 +8,12 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
+import androidx.annotation.IntDef
 import androidx.core.view.ViewCompat
 import androidx.customview.widget.ViewDragHelper
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.utils.ScreenUtils
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -25,29 +27,48 @@ import kotlin.math.min
  * https://darksilber.tistory.com/135
  * http://i5on9i.blogspot.com/2013/10/android-viewdraghelper.html
  * https://github.com/pedrovgs/DraggablePanel
+ * https://github.com/ikew0ng/SwipeBackLayout/blob/master/library/src/main/java/me/imid/swipebacklayout/lib/ViewDragHelper.java
  *
  */
 class DraggableLayout : ViewGroup {
     companion object {
         const val TAG = "DraggableLayout"
+        private const val MIN_SLIDING_DISTANCE_ON_CLICK = 10
 
-        private const val VIDEO_STATUS_MAXIMIZED = 0
-        private const val VIDEO_STATUS_DRAGGING = 1
-        private const val VIDEO_STATUS_MINIMIZED = 2
-        private const val VIDEO_STATUS_CLOSED = 3
+        @IntDef(
+            STATE_MAXIMIZED,
+            STATE_DRAGGING,
+            STATE_MINIMIZED
+        )
+        @Retention(AnnotationRetention.SOURCE)
+        annotation class State
 
-        private const val DIRECTION_IDLE = 0
-        private const val DIRECTION_VERTICAL = ViewDragHelper.DIRECTION_VERTICAL
-        private const val DIRECTION_HORIZONTAL = ViewDragHelper.DIRECTION_HORIZONTAL
+        /**
+         * State indicating dragView is maximized.
+         */
+        private const val STATE_MAXIMIZED = 1
+
+        /**
+         * State indicating dragView is now dragging.
+         */
+        private const val STATE_DRAGGING = 2
+
+        /**
+         * State indicating dragView is minimized.
+         */
+        private const val STATE_MINIMIZED = 3
     }
+
+    @State
+    private var dragViewState: Int = STATE_MAXIMIZED
 
     private lateinit var dragHelper: ViewDragHelper
     private lateinit var dragView: View // 상단뷰 : 유투브로 치면 영상이 나오는 곳
     private lateinit var infoView: View // 하단뷰 : 상단뷰를 제외한 나머지 뷰
 
-    private var activePointerId = ViewDragHelper.INVALID_POINTER
+    private var activePointerId = ViewDragHelper.INVALID_POINTER // 터치영역 확인을 위해서
     private var verticalDragRange = 0 // 영상뷰가 아래쪽으로 내려갈수 있는 범위
-    private var verticalDragRate = 0f // 하단 recyclerview의 alpha값 측정을 위해서 사용
+    private var verticalDragRate = 0f // 하단 recyclerview의 alpha값, 스크롤 다운 또는 업시 좌우 마진 변화를 측정을 위해서 사용
 
     private var offsetVertical = 0 // onViewPositionChanged 의 dy의 누적값을 저장하기 위한 값
     private var minimizedWidth = 0 // 상단뷰가 가장 작아졌을때 너비
@@ -65,15 +86,16 @@ class DraggableLayout : ViewGroup {
      */
     private var touchSlop = 0
 
-    //attr
+    //attrs
     private var topViewId = View.NO_ID // eg) 유투브 상단 영상 나오는 곳 뷰 아이디
     private var bottomViewId = View.NO_ID // eg) 유투브 하단 정보 나오는 곳 뷰 아이디
     /**
      * 컨텐츠 이외의 영역 eg)타이틀, 하단 탭등 영역
      * 스크롤 하는 뷰 여기서는 tryCaptureView 가 중간아래인지 위인지 판단하기 위해서
      */
-    private var windowMargin = 0f
     private var minimizedMargin = Rect()
+    private var windowMargin = 0f
+    private var lastTouchActionDownXPosition = 0f
 
     constructor(context: Context) : super(context) {
         init()
@@ -100,6 +122,14 @@ class DraggableLayout : ViewGroup {
         init()
     }
 
+    override fun onFinishInflate() {
+        super.onFinishInflate()
+        Log.d(TAG, "onFinishInflate")
+
+        dragView = findViewById(topViewId)
+        infoView = findViewById(bottomViewId)
+    }
+
     private fun init() {
         dragHelper = ViewDragHelper.create(this, 1f, dragCallback)
         minimizedWidth = ScreenUtils.getScreenWidth(context) - minimizedMargin.left - minimizedMargin.right
@@ -119,18 +149,12 @@ class DraggableLayout : ViewGroup {
         }
 
         // return new top position
-        override fun clampViewPositionVertical(child: View, top: Int, dy: Int): Int {
-            Log.d(TAG, "clampViewPositionVertical top : $top, dy : $dy")
-            val startY = getTop() + paddingTop
+        override fun clampViewPositionVertical(child: View, aTop: Int, dy: Int): Int {
+            val startY = top + paddingTop // 전체뷰를 사용하기 때문에 무조건 0임.
 
-            val newTop = min(max(startY, top), startY + verticalDragRange)
+            val newTop = min(max(startY, aTop), startY + verticalDragRange) // 움직일수 있는 최대 범위
             Log.d(TAG, "clampViewPositionVertical newTop : $newTop")
             return newTop
-        }
-
-        override fun clampViewPositionHorizontal(child: View, left: Int, dx: Int): Int { // 필요 없어서 따로 구현안함
-            Log.d(TAG, "clampViewPositionHorizontal left : $left, dx : $dx")
-            return super.clampViewPositionHorizontal(child, left, dx)
         }
 
         override fun getViewVerticalDragRange(child: View): Int {
@@ -144,8 +168,6 @@ class DraggableLayout : ViewGroup {
         override fun onViewReleased(releasedChild: View, xvel: Float, yvel: Float) {
             super.onViewReleased(releasedChild, xvel, yvel)
             val startY = top + paddingTop
-            Log.d(TAG, "onViewReleased top : $top, paddingTop : $paddingTop, startY : $startY")
-
             Log.d(TAG, "onViewReleased xvel : $xvel, yvel : $yvel, minVelocity : $minVelocity")
             if (yvel < 0 && yvel <= -minVelocity) { // 위로
                 // maximize
@@ -154,7 +176,6 @@ class DraggableLayout : ViewGroup {
                 // minimize
                 settleCapturedViewAt(releasedChild.left, startY + verticalDragRange)
             } else { // 천천히 움직이고 어느순간 손을 놓는 경우
-                Log.d(TAG, "onViewReleased releasedChild.top : ${releasedChild.top}")
                 val moveHalf = (ScreenUtils.getScreenHeight(context) - windowMargin - releasedChild.measuredHeight) / 2
                 // 상단뷰가 1/2보다 내려왔으면 min, vice versa
                 if (moveHalf < releasedChild.top) {
@@ -165,7 +186,7 @@ class DraggableLayout : ViewGroup {
                     settleCapturedViewAt(releasedChild.left, startY)
                 }
             }
-            invalidate()
+            invalidate() // 다시 그린다.
         }
 
         private fun settleCapturedViewAt(finalLeft: Int, finalTop: Int) {
@@ -173,6 +194,7 @@ class DraggableLayout : ViewGroup {
         }
 
         // if you decide to change the UI in onViewPositionChanged(), you should, definitely, call the invalidate() or requestLayout() to redraw
+        // prefer invalidate()
         override fun onViewPositionChanged(changedView: View, left: Int, top: Int, dx: Int, dy: Int) {
             super.onViewPositionChanged(changedView, left, top, dx, dy)
             Log.d(TAG, "onViewPositionChanged left : $left, top : $top, dx : $dx, dy : $dy")
@@ -196,14 +218,25 @@ class DraggableLayout : ViewGroup {
 
             invalidate() // 다시 그린다.
         }
-    }
 
-    override fun onFinishInflate() {
-        super.onFinishInflate()
-        Log.d(TAG, "onFinishInflate")
+        var mPrevDragState = ViewDragHelper.STATE_IDLE
 
-        dragView = findViewById(topViewId)
-        infoView = findViewById(bottomViewId)
+        /**
+         * 중요 : onTouchEvent 연관됨 maximized or minimized 인 경우는 뷰내부에 control 이 있을수 있어서 클릭처리를 할수 있어야 한다. 따라서 dragging 처리는 하면 안됨
+         * TODO maximized or minimized 인 경우 listener 처리 필요함
+         */
+        override fun onViewDragStateChanged(state: Int) {
+            Log.d(TAG, "onViewDragStateChanged mPrevDragState : $mPrevDragState, state : $state")
+
+            if (mPrevDragState != ViewDragHelper.STATE_IDLE && state == ViewDragHelper.STATE_IDLE) { // minimized or maximized
+                dragViewState = if (offsetVertical == 0) {
+                    STATE_MAXIMIZED
+                } else {
+                    STATE_MINIMIZED
+                }
+            }
+            mPrevDragState = state
+        }
     }
 
     private fun maximize() {
@@ -219,6 +252,7 @@ class DraggableLayout : ViewGroup {
      * them dispatched to this ViewGroup through onTouchEvent().
      * The current target will receive an ACTION_CANCEL event, and no further
      * messages will be delivered here.
+     * 이건 패턴임.
      */
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         if (ev.pointerCount > 1) { // no multi touch
@@ -228,10 +262,8 @@ class DraggableLayout : ViewGroup {
         val action = ev.actionMasked
         Log.d(TAG, "onInterceptTouchEvent action : $action")
 
-        if (action == MotionEvent.ACTION_CANCEL || action == MotionEvent.ACTION_UP) {
-            dragHelper.cancel()
-            return false
-        }
+        val interceptDrag = dragHelper.shouldInterceptTouchEvent(ev)
+        var interceptTap = false
 
         if (action != MotionEvent.ACTION_DOWN) {
             dragHelper.cancel()
@@ -246,8 +278,8 @@ class DraggableLayout : ViewGroup {
         initialMotionX = ev.x
         initialMotionY = ev.y
 
-        val interceptTap = dragHelper.isViewUnder(dragView, ev.x.toInt(), ev.y.toInt())
-        return dragHelper.shouldInterceptTouchEvent(ev) || interceptTap
+        interceptTap = dragHelper.isViewUnder(dragView, ev.x.toInt(), ev.y.toInt())
+        return interceptDrag || interceptTap
     }
 
     /**
@@ -258,28 +290,60 @@ class DraggableLayout : ViewGroup {
             return false
         }
 
-        dragHelper.processTouchEvent(event)
-
         val action = event.actionMasked
-//        Log.d(TAG, "onTouchEvent action : $action")
+        Log.d(TAG, "onTouchEvent action : $action")
 
-        if (action == MotionEvent.ACTION_MOVE) {
-            val dx = event.x - initialMotionX
-            val dy = event.y - initialMotionY
-
-            Log.d(TAG, "onTouchEvent dx : $dx, dy : $dy")
-
-            /**
-             * Pass the touch screen motion event down to the target view, or this
-             * view if it is the target.
-             *
-             * @param event The motion event to be dispatched.
-             * @return True if the event was handled by the view, false otherwise.
-             */
-            dragView.dispatchTouchEvent(cloneMotionEventWithAction(event, MotionEvent.ACTION_CANCEL))
+        if (action == MotionEvent.ACTION_DOWN) {
+            activePointerId = event.getPointerId(event.actionIndex)
         }
 
-        return true
+        if (activePointerId == ViewDragHelper.INVALID_POINTER) {
+            return false
+        }
+
+        dragHelper.processTouchEvent(event)
+
+        if (action == MotionEvent.ACTION_MOVE) {
+            when (dragViewState) {
+                STATE_MAXIMIZED, STATE_MINIMIZED -> {
+                    if (dragHelper.checkTouchSlop(ViewDragHelper.DIRECTION_VERTICAL, activePointerId)) {
+                        dragViewState = STATE_DRAGGING
+                    }
+                }
+            }
+        }
+
+        val isViewUnder = dragHelper.isViewUnder(dragView, event.x.toInt(), event.y.toInt())
+
+        analyzeTouchToMaximizeIfNeeded(event, isViewUnder)
+
+        if (dragViewState == STATE_MAXIMIZED || dragViewState == STATE_MINIMIZED) {
+            dragView.dispatchTouchEvent(event)
+        } else {
+            dragView.dispatchTouchEvent(cloneMotionEventWithAction(event, MotionEvent.ACTION_CANCEL))
+        }
+        return isViewUnder || dragViewState == STATE_DRAGGING
+    }
+
+    private fun analyzeTouchToMaximizeIfNeeded(ev: MotionEvent, isDragViewHit: Boolean) {
+        when (ev.action) {
+            MotionEvent.ACTION_DOWN -> {
+                lastTouchActionDownXPosition = ev.x
+            }
+            MotionEvent.ACTION_UP -> {
+                val clickOffset = ev.x - lastTouchActionDownXPosition
+                if (shouldMaximizeOnClick(ev, clickOffset, isDragViewHit)) {
+                    if (dragViewState == STATE_MINIMIZED) {
+                        dragHelper.smoothSlideViewTo(dragView, left + paddingLeft, top + paddingTop)
+                        ViewCompat.postInvalidateOnAnimation(this)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun shouldMaximizeOnClick(ev: MotionEvent, deltaX: Float, isDragViewHit: Boolean): Boolean {
+        return (abs(deltaX) < MIN_SLIDING_DISTANCE_ON_CLICK && ev.action != MotionEvent.ACTION_MOVE && isDragViewHit)
     }
 
     /**
@@ -293,14 +357,7 @@ class DraggableLayout : ViewGroup {
      * @return cloned motion event
      */
     private fun cloneMotionEventWithAction(event: MotionEvent, action: Int): MotionEvent {
-        return MotionEvent.obtain(
-            event.downTime,
-            event.eventTime,
-            action,
-            x,
-            y,
-            event.metaState
-        )
+        return MotionEvent.obtain(event.downTime, event.eventTime, action, event.x, event.y, event.metaState)
     }
 
     private fun computeScaleX(): Float {
