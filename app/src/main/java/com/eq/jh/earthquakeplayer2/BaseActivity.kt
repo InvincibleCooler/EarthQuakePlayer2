@@ -60,7 +60,7 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
     }
 
     /**
-     * 하나의 프래그먼트는 하나만 추가되도록 한다.
+     * 하나의 프래그먼트는 하나만 추가되도록 한다. 중복방지
      */
     open fun addUniqueFragment(fragment: Fragment, tag: String) {
         removeFragment(fragment, tag)
