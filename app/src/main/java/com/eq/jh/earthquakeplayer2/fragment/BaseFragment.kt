@@ -28,7 +28,7 @@ open class BaseFragment : Fragment() {
 
         if (activity is BaseActivity) {
             (activity as BaseActivity)?.let {
-                it.addFragment(fragment, tag)
+                it.addUniqueFragment(fragment, tag)
             }
         }
     }

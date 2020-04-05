@@ -41,7 +41,6 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
         }
     }
 
-    @Synchronized
     open fun addFragment(fragment: Fragment, tag: String) {
         val fm = supportFragmentManager
         val ft = fm.beginTransaction()
@@ -51,7 +50,6 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
         fm.executePendingTransactions()
     }
 
-    @Synchronized
     open fun replaceFragment(fragment: Fragment, tag: String) {
         val fm = supportFragmentManager
         val ft = fm.beginTransaction()
@@ -59,5 +57,33 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
         ft.addToBackStack(tag)
         ft.commitAllowingStateLoss()
         fm.executePendingTransactions()
+    }
+
+    /**
+     * 하나의 프래그먼트는 하나만 추가되도록 한다.
+     */
+    open fun addUniqueFragment(fragment: Fragment, tag: String) {
+        removeFragment(fragment, tag)
+        addFragment(fragment, tag)
+    }
+
+    private fun removeFragment(fragment: Fragment, tag: String) {
+        val fm = supportFragmentManager
+        val ft = fm.beginTransaction()
+
+        val count = fm.backStackEntryCount
+        Log.d(TAG, "count : $count")
+
+        if (count > 0) {
+            for (i in (count - 1) downTo 0) {
+                val entry = fm.getBackStackEntryAt(i)
+                if (tag == entry.name) {
+                    ft.remove(fragment)
+                    ft.commitAllowingStateLoss()
+                    fm.popBackStackImmediate(entry.id, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    break
+                }
+            }
+        }
     }
 }

@@ -53,7 +53,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun initView() {
-        addFragment(MainFragment.newInstance(), MainFragment.TAG)
+        addUniqueFragment(MainFragment.newInstance(), MainFragment.TAG)
     }
 
     @SuppressLint("CheckResult")
