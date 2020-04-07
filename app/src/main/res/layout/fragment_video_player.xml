@@ -10,29 +10,64 @@
         android:layout_height="match_parent"
         android:splitMotionEvents="false"
         app:bottom_view_id="@+id/bottom_layout"
+        app:minimized_height="@dimen/video_minimized_height"
         app:top_view_id="@+id/top_layout"
         app:top_view_margin_bottom="10dp"
-        app:top_view_margin_left="10dp"
-        app:top_view_margin_right="10dp"
+        app:top_view_margin_left="@dimen/video_top_view_margin_left"
+        app:top_view_margin_right="@dimen/video_top_view_margin_right"
         app:window_margin="120dp">
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/top_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/black"
-            android:splitMotionEvents="false">
+            android:orientation="horizontal">
 
-            <SurfaceView
-                android:id="@+id/surface_view"
+            <FrameLayout
+                android:id="@+id/video_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:background="@color/black"
+                android:splitMotionEvents="false">
 
-            <com.eq.jh.earthquakeplayer2.custom.VideoPlayerControlView
-                android:id="@+id/control_view"
+                <SurfaceView
+                    android:id="@+id/surface_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <com.eq.jh.earthquakeplayer2.custom.VideoPlayerControlView
+                    android:id="@+id/control_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </FrameLayout>
+
+            <RelativeLayout
+                android:id="@+id/video_mini_control_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-        </FrameLayout>
+                android:layout_height="match_parent"
+                android:background="@color/white">
+
+                <ImageView
+                    android:id="@+id/close_iv"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginRight="60dp"
+                    android:src="@drawable/close"
+                    android:background="#f0f"/>
+
+                <ImageView
+                    android:id="@+id/small_play_pause_iv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginRight="70dp"
+                    android:layout_toLeftOf="@+id/close_iv"
+                    android:src="@drawable/btn_pause"
+                    android:background="#ff0"/>
+            </RelativeLayout>
+        </LinearLayout>
 
         <FrameLayout
             android:id="@+id/bottom_layout"

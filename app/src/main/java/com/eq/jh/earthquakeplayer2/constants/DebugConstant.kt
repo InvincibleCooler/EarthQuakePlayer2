@@ -8,6 +8,6 @@ package com.eq.jh.earthquakeplayer2.constants
  */
 class DebugConstant {
     companion object {
-        const val DEBUG = true
+        const val DEBUG = false
     }
 }

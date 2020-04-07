@@ -6,6 +6,7 @@
         <attr name="top_view_margin_right" format="dimension" />
         <attr name="top_view_margin_bottom" format="dimension" />
         <attr name="top_view_margin_left" format="dimension" />
+        <attr name="minimized_height" format="dimension" />
         <attr name="window_margin" format="dimension" />
     </declare-styleable>
 

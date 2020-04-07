@@ -6,13 +6,16 @@ import android.os.Bundle
 import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
 import android.view.*
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.eq.jh.earthquakeplayer2.R
+import com.eq.jh.earthquakeplayer2.custom.DraggableLayout
 import com.eq.jh.earthquakeplayer2.custom.VideoPlayerControlView
 import com.eq.jh.earthquakeplayer2.playback.data.AbstractMusicSource
 import com.eq.jh.earthquakeplayer2.playback.player.EarthquakePlayer
+import com.eq.jh.earthquakeplayer2.utils.ScreenUtils
 import com.google.android.exoplayer2.Player
 
 /**
@@ -38,9 +41,15 @@ class VideoPlayerFragment : BaseFragment() {
         private const val VIEW_TYPE_ITEM = 1
     }
 
+    private lateinit var draggableLayout: DraggableLayout
     private lateinit var surfaceView: SurfaceView
     private lateinit var surfaceHolder: SurfaceHolder
     private lateinit var controlView: VideoPlayerControlView
+    private lateinit var topLayout: View
+    private lateinit var videoView: View
+    private lateinit var videoMiniControlView: View
+    private lateinit var closeIv: ImageView
+    private lateinit var smallPlayPauseIv: ImageView
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var infoAdapter: InfoAdapter
@@ -109,9 +118,54 @@ class VideoPlayerFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        draggableLayout = view.findViewById(R.id.draggable_layout)
         surfaceView = view.findViewById(R.id.surface_view)
         controlView = view.findViewById(R.id.control_view)
         recyclerView = view.findViewById(R.id.recycler_view)
+        topLayout = view.findViewById(R.id.top_layout)
+        videoView = view.findViewById(R.id.video_view)
+        videoMiniControlView = view.findViewById(R.id.video_mini_control_view)
+        closeIv = view.findViewById(R.id.close_iv)
+        smallPlayPauseIv = view.findViewById(R.id.small_play_pause_iv)
+
+        val windowWidth = ScreenUtils.getScreenWidth(context)
+        val minimizedHeight = resources.getDimensionPixelSize(R.dimen.video_minimized_height)
+        Log.d(TAG, "minimizedHeight : $minimizedHeight")
+
+        val videoViewWidth = minimizedHeight * 16 / 9
+        val videoMiniControlViewWidth = windowWidth - videoViewWidth
+        val ratio = (windowWidth.toFloat() / videoViewWidth.toFloat())
+        val scaledRestOfVideoViewWidth = (videoMiniControlViewWidth * ratio).toInt()
+
+        Log.d(TAG, "videoViewWidth : $videoViewWidth")
+        Log.d(TAG, "videoMiniControlViewWidth : $videoMiniControlViewWidth")
+        Log.d(TAG, "ratio : $ratio")
+        Log.d(TAG, "scaledRestOfVideoViewWidth width : $scaledRestOfVideoViewWidth")
+
+        videoView.layoutParams.width = windowWidth
+        videoMiniControlView.layoutParams.width = scaledRestOfVideoViewWidth
+        topLayout.layoutParams.width = windowWidth + scaledRestOfVideoViewWidth
+//        videoView.requestLayout()
+//        videoMiniControlView.requestLayout()
+//        topLayout.requestLayout()
+
+//        draggableLayout.setOnDraggableListener(object : DraggableLayout.OnDraggableListener {
+//            override fun onMaximized() {
+//                Log.d(TAG, "OnDraggableListener onMaximized")
+//                controlView.visibility = View.VISIBLE
+//            }
+//
+//            override fun onMinimized() {
+//                Log.d(TAG, "OnDraggableListener onMinimized")
+//                controlView.visibility = View.GONE
+//            }
+//
+//            override fun onDragStart() {
+//                if (controlView.visibility == View.VISIBLE) {
+//                    controlView.visibility = View.GONE
+//                }
+//            }
+//        })
 
         surfaceHolder = surfaceView.holder
         surfaceHolder.addCallback(object : SurfaceHolder.Callback {
@@ -146,22 +200,33 @@ class VideoPlayerFragment : BaseFragment() {
 
         view.findViewById<VideoPlayerControlView>(R.id.control_view).setControlViewCallback(object : VideoPlayerControlView.ControlViewCallback {
             override fun onPlayClick() {
-                Log.d(TAG, "onPlayClick isPrepared : $isPrepared")
-                if (!isPrepared) {
-                    return
-                }
-
                 val isPlaying = isPlaying()
-                Log.d(TAG, "onPlayClick isPlaying() : ${isPlaying()}")
-
-                if (isPlaying) {
-                    player?.pause()
-                } else {
-                    player?.start()
-                }
+                performPlayClick(isPlaying)
                 controlView.togglePlayOrPause(!isPlaying)
             }
         })
+
+        smallPlayPauseIv.setOnClickListener {
+            //            performPlayClick()
+            Log.d(TAG, "smallPlayPauseIv click")
+        }
+
+        closeIv.setOnClickListener {
+            Log.d(TAG, "closeIv click")
+        }
+    }
+
+    private fun performPlayClick(isPlaying: Boolean) {
+        Log.d(TAG, "performPlayClick isPrepared : $isPrepared")
+        if (isPrepared) {
+            Log.d(TAG, "performPlayClick : $isPlaying")
+
+            if (isPlaying) {
+                player?.pause()
+            } else {
+                player?.start()
+            }
+        }
     }
 
     private fun isPlaying(): Boolean {
