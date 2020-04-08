@@ -1,5 +1,5 @@
 <resources>
-    <dimen name="video_minimized_height">70dp</dimen>
-    <dimen name="video_top_view_margin_left">0dp</dimen>
-    <dimen name="video_top_view_margin_right">0dp</dimen>
+    <dimen name="video_minimized_height">100dp</dimen>
+    <dimen name="video_top_view_margin_left">10dp</dimen>
+    <dimen name="video_top_view_margin_right">10dp</dimen>
 </resources>

@@ -4,12 +4,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.eq.jh.earthquakeplayer2.custom.DraggableLayout
+   <com.eq.jh.earthquakeplayer2.custom.DraggableLayout
         android:id="@+id/draggable_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:bottom_view_id="@+id/bottom_layout"
-        app:top_view_id="@+id/top_layout"
+        app:info_view_id="@+id/bottom_layout"
+        app:player_view_id="@+id/top_layout"
         app:window_margin="120dp">
 
         <FrameLayout

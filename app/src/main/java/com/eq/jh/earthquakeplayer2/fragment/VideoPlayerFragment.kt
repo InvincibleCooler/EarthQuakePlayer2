@@ -15,7 +15,6 @@ import com.eq.jh.earthquakeplayer2.custom.DraggableLayout
 import com.eq.jh.earthquakeplayer2.custom.VideoPlayerControlView
 import com.eq.jh.earthquakeplayer2.playback.data.AbstractMusicSource
 import com.eq.jh.earthquakeplayer2.playback.player.EarthquakePlayer
-import com.eq.jh.earthquakeplayer2.utils.ScreenUtils
 import com.google.android.exoplayer2.Player
 
 /**
@@ -45,11 +44,7 @@ class VideoPlayerFragment : BaseFragment() {
     private lateinit var surfaceView: SurfaceView
     private lateinit var surfaceHolder: SurfaceHolder
     private lateinit var controlView: VideoPlayerControlView
-    private lateinit var topLayout: View
-    private lateinit var videoView: View
-    private lateinit var videoMiniControlView: View
     private lateinit var closeIv: ImageView
-    private lateinit var smallPlayPauseIv: ImageView
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var infoAdapter: InfoAdapter
@@ -122,50 +117,31 @@ class VideoPlayerFragment : BaseFragment() {
         surfaceView = view.findViewById(R.id.surface_view)
         controlView = view.findViewById(R.id.control_view)
         recyclerView = view.findViewById(R.id.recycler_view)
-        topLayout = view.findViewById(R.id.top_layout)
-        videoView = view.findViewById(R.id.video_view)
-        videoMiniControlView = view.findViewById(R.id.video_mini_control_view)
         closeIv = view.findViewById(R.id.close_iv)
-        smallPlayPauseIv = view.findViewById(R.id.small_play_pause_iv)
 
-        val windowWidth = ScreenUtils.getScreenWidth(context)
-        val minimizedHeight = resources.getDimensionPixelSize(R.dimen.video_minimized_height)
-        Log.d(TAG, "minimizedHeight : $minimizedHeight")
+        draggableLayout.setOnDraggableListener(object : DraggableLayout.OnDraggableListener {
+            override fun onMaximized() {
+                Log.d(TAG, "OnDraggableListener onMaximized")
+                controlView.visibility = View.VISIBLE
+                closeIv.visibility = View.INVISIBLE
+            }
 
-        val videoViewWidth = minimizedHeight * 16 / 9
-        val videoMiniControlViewWidth = windowWidth - videoViewWidth
-        val ratio = (windowWidth.toFloat() / videoViewWidth.toFloat())
-        val scaledRestOfVideoViewWidth = (videoMiniControlViewWidth * ratio).toInt()
+            override fun onMinimized() {
+                Log.d(TAG, "OnDraggableListener onMinimized")
+                controlView.visibility = View.INVISIBLE
+                closeIv.visibility = View.VISIBLE
+            }
 
-        Log.d(TAG, "videoViewWidth : $videoViewWidth")
-        Log.d(TAG, "videoMiniControlViewWidth : $videoMiniControlViewWidth")
-        Log.d(TAG, "ratio : $ratio")
-        Log.d(TAG, "scaledRestOfVideoViewWidth width : $scaledRestOfVideoViewWidth")
-
-        videoView.layoutParams.width = windowWidth
-        videoMiniControlView.layoutParams.width = scaledRestOfVideoViewWidth
-        topLayout.layoutParams.width = windowWidth + scaledRestOfVideoViewWidth
-//        videoView.requestLayout()
-//        videoMiniControlView.requestLayout()
-//        topLayout.requestLayout()
-
-//        draggableLayout.setOnDraggableListener(object : DraggableLayout.OnDraggableListener {
-//            override fun onMaximized() {
-//                Log.d(TAG, "OnDraggableListener onMaximized")
-//                controlView.visibility = View.VISIBLE
-//            }
-//
-//            override fun onMinimized() {
-//                Log.d(TAG, "OnDraggableListener onMinimized")
-//                controlView.visibility = View.GONE
-//            }
-//
-//            override fun onDragStart() {
-//                if (controlView.visibility == View.VISIBLE) {
-//                    controlView.visibility = View.GONE
-//                }
-//            }
-//        })
+            override fun onDragStart() {
+                Log.d(TAG, "OnDraggableListener onDragStart")
+                if (controlView.visibility == View.VISIBLE) {
+                    controlView.visibility = View.INVISIBLE
+                }
+                if (closeIv.visibility == View.VISIBLE) {
+                    closeIv.visibility = View.INVISIBLE
+                }
+            }
+        })
 
         surfaceHolder = surfaceView.holder
         surfaceHolder.addCallback(object : SurfaceHolder.Callback {
@@ -196,6 +172,9 @@ class VideoPlayerFragment : BaseFragment() {
 
         surfaceView.setOnClickListener {
             Log.d(TAG, "surfaceView click")
+            if (draggableLayout.isMinimized()) {
+                draggableLayout.maximize()
+            }
         }
 
         view.findViewById<VideoPlayerControlView>(R.id.control_view).setControlViewCallback(object : VideoPlayerControlView.ControlViewCallback {
@@ -205,11 +184,6 @@ class VideoPlayerFragment : BaseFragment() {
                 controlView.togglePlayOrPause(!isPlaying)
             }
         })
-
-        smallPlayPauseIv.setOnClickListener {
-            //            performPlayClick()
-            Log.d(TAG, "smallPlayPauseIv click")
-        }
 
         closeIv.setOnClickListener {
             Log.d(TAG, "closeIv click")
@@ -258,6 +232,10 @@ class VideoPlayerFragment : BaseFragment() {
                     val vh = viewHolder as ItemViewHolder
 
                     vh.titleTv.text = "Title $position"
+
+                    vh.itemView.setOnClickListener {
+                        Log.d(TAG, "click : ${vh.titleTv.text}")
+                    }
                 }
             }
         }
