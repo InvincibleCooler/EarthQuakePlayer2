@@ -189,7 +189,7 @@ class VideoFragment : BaseFragment() {
                     vh.playtimeTv.text = TimeUtils.milliSecondsToTimer(duration)
 
                     vh.itemView.setOnClickListener {
-                        open(VideoPlayerFragment.newInstance(data), VideoPlayerFragment.TAG)
+                        openFragment(VideoPlayerFragment.newInstance(data), VideoPlayerFragment.TAG)
                     }
                 }
             }

@@ -186,6 +186,8 @@ class VideoPlayerFragment : BaseFragment() {
         })
 
         closeIv.setOnClickListener {
+            releasePlayer()
+            removeFragment(this, TAG)
             Log.d(TAG, "closeIv click")
         }
     }

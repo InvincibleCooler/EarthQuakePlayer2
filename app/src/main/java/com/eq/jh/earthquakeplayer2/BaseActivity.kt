@@ -67,7 +67,7 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
         addFragment(fragment, tag)
     }
 
-    private fun removeFragment(fragment: Fragment, tag: String) {
+    open fun removeFragment(fragment: Fragment, tag: String) {
         val fm = supportFragmentManager
         val ft = fm.beginTransaction()
 

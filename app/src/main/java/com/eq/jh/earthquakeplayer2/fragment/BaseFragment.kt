@@ -23,12 +23,20 @@ open class BaseFragment : Fragment() {
         onRestoreInstanceState(instanceState)
     }
 
-    open fun open(fragment: BaseFragment, tag: String) {
+    open fun openFragment(fragment: BaseFragment, tag: String) {
         Log.d(TAG, "open() f:$fragment tag:$tag")
 
         if (activity is BaseActivity) {
             (activity as BaseActivity)?.let {
                 it.addUniqueFragment(fragment, tag)
+            }
+        }
+    }
+
+    fun removeFragment(fragment: BaseFragment, tag: String) {
+        if (activity is BaseActivity) {
+            (activity as BaseActivity)?.let {
+                it.removeFragment(fragment, tag)
             }
         }
     }
