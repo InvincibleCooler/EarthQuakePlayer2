@@ -7,7 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
-import androidx.core.view.ViewCompat
+import androidx.core.view.*
 import androidx.customview.widget.ViewDragHelper
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.constants.DebugConstant
@@ -309,8 +309,11 @@ class DraggableLayout : ViewGroup {
         val isPlayerViewHit = isViewHit(playerView, ev.x.toInt(), ev.y.toInt())
         val isInfoViewHit = isViewHit(infoView, ev.x.toInt(), ev.y.toInt())
 //        analyzeTouchToMaximizeIfNeeded(ev, isPlayerViewHit)
-        Log.d(TAG, "childCount : $childCount")
-
+//        if (isMaximized() || isMinimized()) {
+//            dispatchTouchEventToChild(ev)
+//        } else {
+//            playerView.dispatchTouchEvent(cloneMotionEventWithAction(ev, MotionEvent.ACTION_CANCEL))
+//        }
         when {
             isMaximized() -> {
                 playerView.dispatchTouchEvent(ev)
@@ -397,8 +400,41 @@ class DraggableLayout : ViewGroup {
         return MotionEvent.obtain(event.downTime, event.eventTime, action, x, y, event.metaState)
     }
 
-    private fun dispatchTouchEventToChild() {
-        var child = childCount
+    private fun dispatchTouchEventToChild(ev: MotionEvent) {
+        val playerViewGroup = playerView as ViewGroup
+        val count = playerViewGroup.childCount
+        Log.d(TAG, "dispatchTouchEventToChild count : $count")
+        if (count > 0) {
+            for (i in 0 until count) {
+                val childView = getChildAt(i)
+
+                val scaleY = computeScaleY()
+                val transformedViewWidth = childView.width * scaleY
+                val transformedViewHeight = childView.height * scaleY
+                val transformedMarginLeft = childView.marginLeft * scaleY
+                val transformedMarginTop = childView.marginTop * scaleY
+                val transformedMarginRight = childView.marginRight * scaleY
+                val transformedMarginBottom = childView.marginBottom * scaleY
+
+                Log.d(TAG, "dispatchTouchEventToChild transformedViewWidth : $transformedViewWidth, transformedViewHeight : $transformedViewHeight")
+                Log.d(TAG, "dispatchTouchEventToChild transformedMarginLeft : $transformedMarginLeft, transformedMarginTop : $transformedMarginTop, transformedMarginRight : $transformedMarginRight, transformedMarginBottom : $transformedMarginBottom")
+
+//                val location = IntArray(2)
+//                childView.getLocationOnScreen(location)
+//
+//
+//                val x = ev.x.toInt()
+//                val y = ev.y.toInt()
+//
+//                val isChildClicked = (x >= location[0]
+//                        && x < location[0] + childView.width
+//                        && y >= location[1]
+//                        && y < location[1] + childView.height)
+//                if (isChildClicked) {
+//                    childView.dispatchTouchEvent(cloneMotionEventWithAction(ev, ev.action))
+//                }
+            }
+        }
     }
 
     private fun computeScaleX(): Float {
