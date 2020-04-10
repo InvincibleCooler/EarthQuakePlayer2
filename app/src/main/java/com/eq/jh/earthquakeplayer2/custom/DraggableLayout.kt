@@ -11,6 +11,7 @@ import androidx.core.view.ViewCompat
 import androidx.customview.widget.ViewDragHelper
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.constants.DebugConstant
+import com.eq.jh.earthquakeplayer2.listener.RetrieveItemValue
 import com.eq.jh.earthquakeplayer2.utils.ScreenUtils
 import kotlin.math.abs
 import kotlin.math.max
@@ -81,10 +82,10 @@ class DraggableLayout : ViewGroup {
      * 컨텐츠 이외의 영역 eg)타이틀, 하단 탭등 영역의 합
      * 스크롤 하는 뷰 여기서는 tryCaptureView 가 중간아래인지 위인지 판단하기 위해서
      */
-    private var windowMargin = 0f
     private var playerViewMarginLeft = 0
     private var playerViewMarginRight = 0
     private var playerViewMarginBottom = 0
+    private var windowMargin = 0f
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         val a = context.obtainStyledAttributes(attrs, R.styleable.draggable_view)
@@ -94,10 +95,11 @@ class DraggableLayout : ViewGroup {
         playerViewMarginLeft = a.getDimensionPixelSize(R.styleable.draggable_view_player_view_margin_left, 0)
         playerViewMarginRight = a.getDimensionPixelSize(R.styleable.draggable_view_player_view_margin_right, 0)
         playerViewMarginBottom = a.getDimensionPixelSize(R.styleable.draggable_view_player_view_margin_bottom, 0)
-        minimizedHeight = a.getDimensionPixelSize(R.styleable.draggable_view_minimized_height, ScreenUtils.dipToPixel(context, 65f))
+        minimizedHeight = a.getDimensionPixelSize(R.styleable.draggable_view_minimized_height, resources.getDimensionPixelSize(R.dimen.video_default_minimized_height))
         windowMargin = a.getDimension(R.styleable.draggable_view_window_margin, 0f)
 
         Log.d(TAG, "constructor minimizedHeight : $minimizedHeight")
+        Log.d(TAG, "constructor default minimizedHeight : ${resources.getDimensionPixelSize(R.dimen.video_default_minimized_height)}")
         Log.d(TAG, "constructor windowMargin : $windowMargin")
 
         a.recycle()
@@ -117,7 +119,7 @@ class DraggableLayout : ViewGroup {
         Log.d(TAG, "init minimizedWidth : $minimizedWidth")
 
         val configuration = ViewConfiguration.get(context)
-        minVelocity = configuration.scaledMinimumFlingVelocity // for debugging : value is 131 based on gallaxy note9
+        minVelocity = (configuration.scaledMinimumFlingVelocity * 1.5).toInt() // 미세하게 움직여도 반응하기 때문에 크기를 약간 늘림
         Log.d(TAG, "init minVelocity : $minVelocity")
     }
 
@@ -224,13 +226,12 @@ class DraggableLayout : ViewGroup {
             }
 
             /**
+             * ViewDragHelper.STATE_DRAGGING 처리 금지
              * ViewDragHelper.STATE_DRAGGING 처리하면 클릭이 안됨
              * ViewDragHelper.STATE_DRAGGING 처리하면 ViewDragHelper 의 shouldInterceptTouchEvent 에서 intercept를 true해버려서 자식뷰 이벤트를 가로챔
              */
-            when (state) {
-                ViewDragHelper.STATE_SETTLING -> {
-                    onDraggableListener?.onDragStart()
-                }
+            if (state == ViewDragHelper.STATE_SETTLING) {
+                onDraggableListener?.onDragStart()
             }
             prevDragState = state
         }
@@ -244,10 +245,21 @@ class DraggableLayout : ViewGroup {
      * 이건 패턴임.
      */
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.pointerCount > 1) { // no multi touch
+            return false
+        }
+
         val action = ev.actionMasked
         if (DebugConstant.DEBUG) {
             Log.d(TAG, "onInterceptTouchEvent action : $action")
         }
+
+        if (disableDragViewItem?.visibility == View.VISIBLE) { // seekbar 처리
+            if (disableDraggingChecker.getItemValue(ev)) {
+                return false
+            }
+        }
+
 
         when (action) {
             MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
@@ -273,6 +285,10 @@ class DraggableLayout : ViewGroup {
      * @return Return true if the event was handled, false otherwise
      */
     override fun onTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.pointerCount > 1) { // no multi touch
+            return false
+        }
+
         val action = ev.actionMasked
         if (DebugConstant.DEBUG) {
             Log.d(TAG, "onTouchEvent action : $action")
@@ -293,11 +309,18 @@ class DraggableLayout : ViewGroup {
         val isPlayerViewHit = isViewHit(playerView, ev.x.toInt(), ev.y.toInt())
         val isInfoViewHit = isViewHit(infoView, ev.x.toInt(), ev.y.toInt())
 //        analyzeTouchToMaximizeIfNeeded(ev, isPlayerViewHit)
+        Log.d(TAG, "childCount : $childCount")
 
-        if (isMaximized() || isMinimized()) {
-            playerView.dispatchTouchEvent(modifyMotionEventWithAction(playerView, ev, ev.action))
-        } else {
-            playerView.dispatchTouchEvent(cloneMotionEventWithAction(ev, MotionEvent.ACTION_CANCEL))
+        when {
+            isMaximized() -> {
+                playerView.dispatchTouchEvent(ev)
+            }
+            isMinimized() -> {
+                playerView.dispatchTouchEvent(transformMotionEventWithAction(playerView, ev, ev.action))
+            }
+            else -> {
+                playerView.dispatchTouchEvent(cloneMotionEventWithAction(ev, MotionEvent.ACTION_CANCEL))
+            }
         }
 
         return isPlayerViewHit || isInfoViewHit
@@ -356,15 +379,26 @@ class DraggableLayout : ViewGroup {
         return MotionEvent.obtain(event.downTime, event.eventTime, action, event.x, event.y, event.metaState)
     }
 
-    private fun modifyMotionEventWithAction(view: View, event: MotionEvent, action: Int): MotionEvent {
+    /**
+     * player view에 있는 close 버튼을 누르면 차일드뷰 (여기서는 close 버튼)가 이벤트를 가져가야 한다.
+     * child 처리로 변경해야 함
+     */
+    private fun transformMotionEventWithAction(view: View, event: MotionEvent, action: Int): MotionEvent {
         val scaleY = computeScaleY()
         val playerViewHeight = view.height * scaleY
+        val closeButtonMarginRight = resources.getDimensionPixelSize(R.dimen.close_button_margin_right) * scaleY // related to x position
+        val closeButtonMarginTop = resources.getDimensionPixelSize(R.dimen.close_button_margin_top) * scaleY
+        val closeButtonHeight = resources.getDimensionPixelSize(R.dimen.close_button_height) * scaleY
 
         val marginTop = view.height - playerViewHeight
-        val x = event.x - view.left.toFloat()
-        val y = event.y - view.top.toFloat() - marginTop
+        val x = event.x - view.left.toFloat() - playerViewMarginLeft - playerViewMarginRight - closeButtonMarginRight
+        val y = event.y - view.top.toFloat() - marginTop + closeButtonHeight + closeButtonMarginTop + playerViewMarginBottom
 
         return MotionEvent.obtain(event.downTime, event.eventTime, action, x, y, event.metaState)
+    }
+
+    private fun dispatchTouchEventToChild() {
+        var child = childCount
     }
 
     private fun computeScaleX(): Float {
@@ -458,5 +492,35 @@ class DraggableLayout : ViewGroup {
             return true
         }
         return false
+    }
+
+    private lateinit var disableDragViewItem: View
+
+    fun addDisableDraggingView(view: View) { // seekbar 처리가 필요함
+        Log.d(TAG, "addDisableDraggingView : $view")
+        if (view == null) {
+            return
+        }
+        disableDragViewItem = view
+    }
+
+    /**
+     * seek바 움직일때 뷰가 계속 흔들려서 처리함 (카카오 TV참고함)
+     */
+    private val disableDraggingChecker: RetrieveItemValue<MotionEvent, Boolean> = object : RetrieveItemValue<MotionEvent, Boolean> {
+        private val DISABLE_TOUCH_TH = 50
+
+        override fun getItemValue(ev: MotionEvent): Boolean {
+            val location = IntArray(2)
+            disableDragViewItem.getLocationOnScreen(location)
+
+            val x = ev.x.toInt()
+            val y = ev.y.toInt()
+
+            return (x >= location[0] - DISABLE_TOUCH_TH
+                    && x < location[0] + disableDragViewItem.width + DISABLE_TOUCH_TH
+                    && y >= location[1] - DISABLE_TOUCH_TH
+                    && y < location[1] + disableDragViewItem.height + DISABLE_TOUCH_TH)
+        }
     }
 }

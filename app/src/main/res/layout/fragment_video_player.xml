@@ -37,16 +37,17 @@
                 <com.eq.jh.earthquakeplayer2.custom.VideoPlayerControlView
                     android:id="@+id/control_view"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                    android:layout_height="match_parent"
+                    android:visibility="invisible" />
             </FrameLayout>
 
             <ImageView
                 android:id="@+id/close_iv"
                 android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_height="@dimen/close_button_height"
                 android:layout_alignParentRight="true"
-                android:layout_marginTop="10dp"
-                android:layout_marginRight="10dp"
+                android:layout_marginTop="@dimen/close_button_margin_top"
+                android:layout_marginRight="@dimen/close_button_margin_right"
                 android:background="#f0f"
                 android:src="@drawable/close"
                 android:visibility="invisible" />

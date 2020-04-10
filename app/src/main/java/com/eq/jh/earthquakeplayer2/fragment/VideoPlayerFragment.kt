@@ -119,24 +119,32 @@ class VideoPlayerFragment : BaseFragment() {
         recyclerView = view.findViewById(R.id.recycler_view)
         closeIv = view.findViewById(R.id.close_iv)
 
+        draggableLayout.addDisableDraggingView(controlView.getSeekBar())
         draggableLayout.setOnDraggableListener(object : DraggableLayout.OnDraggableListener {
             override fun onMaximized() {
-                Log.d(TAG, "OnDraggableListener onMaximized")
-                controlView.visibility = View.VISIBLE
-                closeIv.visibility = View.INVISIBLE
+                if (closeIv.visibility == View.VISIBLE) {
+                    closeIv.visibility = View.INVISIBLE
+                }
+//                controlView.alpha = 1f
             }
 
             override fun onMinimized() {
-                Log.d(TAG, "OnDraggableListener onMinimized")
-                controlView.visibility = View.INVISIBLE
-                closeIv.visibility = View.VISIBLE
-            }
-
-            override fun onDragStart() {
-                Log.d(TAG, "OnDraggableListener onDragStart")
                 if (controlView.visibility == View.VISIBLE) {
                     controlView.visibility = View.INVISIBLE
                 }
+                if (closeIv.visibility == View.INVISIBLE) {
+                    closeIv.visibility = View.VISIBLE
+                }
+//                controlView.alpha = 1f
+//                closeIv.alpha = 1f
+            }
+
+            override fun onDragStart() {
+//                Log.d(TAG, "controlView.visibility : ${controlView.visibility}")
+//                Log.d(TAG, "closeIv.visibility : ${closeIv.visibility}")
+//
+//                controlView.alpha = 0f
+//                closeIv.alpha = 0f
                 if (closeIv.visibility == View.VISIBLE) {
                     closeIv.visibility = View.INVISIBLE
                 }
@@ -172,13 +180,16 @@ class VideoPlayerFragment : BaseFragment() {
 
         surfaceView.setOnClickListener {
             Log.d(TAG, "surfaceView click")
-            if (draggableLayout.isMinimized()) {
+            if (draggableLayout.isMaximized()) {
+                toggleControlView()
+            } else if (draggableLayout.isMinimized()) {
                 draggableLayout.maximize()
             }
         }
 
-        view.findViewById<VideoPlayerControlView>(R.id.control_view).setControlViewCallback(object : VideoPlayerControlView.ControlViewCallback {
+        controlView.setControlViewCallback(object : VideoPlayerControlView.ControlViewCallback {
             override fun onPlayClick() {
+                Log.d(TAG, "onPlayClick click")
                 val isPlaying = isPlaying()
                 performPlayClick(isPlaying)
                 controlView.togglePlayOrPause(!isPlaying)
@@ -213,6 +224,15 @@ class VideoPlayerFragment : BaseFragment() {
         player?.release()
         player = null
         isPrepared = false
+    }
+
+    private fun toggleControlView() {
+        Log.d(TAG, "controlView.visibility : ${controlView.visibility}")
+        if (controlView.visibility == View.VISIBLE) {
+            controlView.visibility = View.INVISIBLE
+        } else if (controlView.visibility == View.INVISIBLE) {
+            controlView.visibility = View.VISIBLE
+        }
     }
 
     private inner class InfoAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {

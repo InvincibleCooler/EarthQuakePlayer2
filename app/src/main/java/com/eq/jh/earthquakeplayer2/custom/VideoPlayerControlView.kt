@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.SeekBar
 import com.eq.jh.earthquakeplayer2.R
 
 
@@ -16,6 +17,11 @@ import com.eq.jh.earthquakeplayer2.R
  *
  */
 class VideoPlayerControlView : LinearLayout, View.OnClickListener {
+    companion object {
+        const val TAG = "VideoPlayerControlView"
+        private const val ANIMATION_DURATION: Long = 300
+    }
+
     interface ControlViewCallback {
         fun onPlayClick() // play pause toggle
     }
@@ -27,6 +33,7 @@ class VideoPlayerControlView : LinearLayout, View.OnClickListener {
     }
 
     private lateinit var playIv: ImageView
+    private lateinit var seekBar: SeekBar
 
     constructor(context: Context) : super(context) { // 따로 지원 안함
         init()
@@ -41,6 +48,7 @@ class VideoPlayerControlView : LinearLayout, View.OnClickListener {
         val view = inflater.inflate(R.layout.video_player_control_view, this, true)
 
         playIv = view.findViewById(R.id.play_pause_iv)
+        seekBar = view.findViewById(R.id.seek_bar)
         playIv.setOnClickListener(this)
     }
 
@@ -55,4 +63,6 @@ class VideoPlayerControlView : LinearLayout, View.OnClickListener {
     fun togglePlayOrPause(isPlaying: Boolean) {
         playIv.setImageResource(if (isPlaying) R.drawable.btn_pause else R.drawable.btn_play)
     }
+
+    fun getSeekBar() = seekBar
 }
