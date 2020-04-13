@@ -4,18 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.eq.jh.earthquakeplayer2.custom.DraggableLayout
-        android:id="@+id/draggable_layout"
+    <com.eq.jh.earthquakeplayer2.custom.YoutubeLayout
+        android:id="@+id/youtube_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:splitMotionEvents="false"
-        app:info_view_id="@+id/bottom_layout"
-        app:minimized_height="@dimen/video_minimized_height"
-        app:player_view_id="@+id/top_layout"
-        app:player_view_margin_bottom="10dp"
-        app:player_view_margin_left="@dimen/video_top_view_margin_left"
-        app:player_view_margin_right="@dimen/video_top_view_margin_right"
-        app:window_margin="120dp">
+        app:youtube_bottom_view_id="@+id/bottom_layout"
+        app:youtube_margin_bottom="10dp"
+        app:youtube_margin_left="@dimen/video_top_view_margin_left"
+        app:youtube_margin_right="@dimen/video_top_view_margin_right"
+        app:youtube_minimized_height="@dimen/video_minimized_height"
+        app:youtube_top_view_id="@+id/top_layout">
 
         <RelativeLayout
             android:id="@+id/top_layout"
@@ -66,5 +65,5 @@
                 android:overScrollMode="never"
                 android:scrollbars="vertical" />
         </FrameLayout>
-    </com.eq.jh.earthquakeplayer2.custom.DraggableLayout>
+    </com.eq.jh.earthquakeplayer2.custom.YoutubeLayout>
 </FrameLayout>

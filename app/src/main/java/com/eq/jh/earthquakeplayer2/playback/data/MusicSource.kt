@@ -122,8 +122,4 @@ abstract class AbstractMusicSource(context: Context) : MusicSource {
     override fun search(query: String, extras: Bundle): List<MediaMetadataCompat> {
         return emptyList()
     }
-
-    companion object {
-        val CUSTOM_METADATA_TRACK_SOURCE = "__SOURCE__"
-    }
 }

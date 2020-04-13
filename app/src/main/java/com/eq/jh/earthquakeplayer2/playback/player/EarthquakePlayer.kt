@@ -30,7 +30,7 @@ class EarthquakePlayer(val context: Context) {
 
     interface ExoPlayerCallback {
         fun onCompletion()
-        fun onPlaybackStatusChanged(state: Int)
+        fun onExoPlayerPlaybackStatusChanged(state: Int)
         fun onError(error: String)
     }
 
@@ -79,7 +79,7 @@ class EarthquakePlayer(val context: Context) {
                         RxBus.publish(RxBusEvent.EventLoadingProgress(false))
                     }
 
-                    callback?.onPlaybackStatusChanged(playbackState)
+                    callback?.onExoPlayerPlaybackStatusChanged(playbackState)
                 }
                 Player.STATE_ENDED -> {
                     callback?.onCompletion()
@@ -125,12 +125,8 @@ class EarthquakePlayer(val context: Context) {
         simpleExoPlayer.playWhenReady = false
     }
 
-    fun stop() {
-        simpleExoPlayer.stop()
-    }
-
-    fun reset() {
-        simpleExoPlayer.stop(true)
+    fun stop(reset: Boolean) {
+        simpleExoPlayer.stop(reset)
     }
 
     fun release() {
@@ -142,6 +138,7 @@ class EarthquakePlayer(val context: Context) {
     fun setDataSource(uri: Uri) {
         val mediaSource = buildMediaSource(uri)
         if (mediaSource != null) {
+            Log.e(TAG, "MediaSource is ready")
             simpleExoPlayer.prepare(mediaSource)
         } else {
             Log.e(TAG, "MediaSource is not available.")

@@ -7,6 +7,7 @@ import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
 import android.webkit.MimeTypeMap
+import com.eq.jh.earthquakeplayer2.constants.KeyConstant
 import com.eq.jh.earthquakeplayer2.rxbus.RxBus
 import com.eq.jh.earthquakeplayer2.rxbus.RxBusEvent
 import kotlinx.coroutines.Dispatchers
@@ -111,7 +112,7 @@ class SongSource(private val context: Context) : AbstractMusicSource(context) {
                                 .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album)
                                 .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, track)
                                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
-                                .putString(CUSTOM_METADATA_TRACK_SOURCE, contentUri)
+                                .putString(KeyConstant.KEY_CUSTOM_METADATA_TRACK_SOURCE, contentUri)
                                 .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, albumArtUri)
                                 .putString(MediaMetadataCompat.METADATA_KEY_GENRE, genreName)
                                 .build()

@@ -19,9 +19,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.constants.ContentType
+import com.eq.jh.earthquakeplayer2.constants.KeyConstant
 import com.eq.jh.earthquakeplayer2.playback.KEY_MEDIA_METADATA
 import com.eq.jh.earthquakeplayer2.playback.MusicService
-import com.eq.jh.earthquakeplayer2.playback.data.AbstractMusicSource
 import com.eq.jh.earthquakeplayer2.rxbus.RxBus
 import com.eq.jh.earthquakeplayer2.rxbus.RxBusEvent
 import com.eq.ljh.flags.constants.MediaBrowserIdConstant
@@ -195,7 +195,7 @@ class SongFragment : BaseFragment() {
 
                     val songName = data?.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
                     val artistName = data?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
-                    val contentUri = Uri.parse(data?.getString(AbstractMusicSource.CUSTOM_METADATA_TRACK_SOURCE))
+                    val contentUri = Uri.parse(data?.getString(KeyConstant.KEY_CUSTOM_METADATA_TRACK_SOURCE))
                     val albumArtUri = data?.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI)
 
                     activity?.let {

@@ -1,12 +1,14 @@
 package com.eq.jh.earthquakeplayer2.custom
 
 import android.content.Context
+import android.text.format.DateUtils
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
+import android.widget.TextView
 import com.eq.jh.earthquakeplayer2.R
 
 
@@ -19,7 +21,6 @@ import com.eq.jh.earthquakeplayer2.R
 class VideoPlayerControlView : LinearLayout, View.OnClickListener {
     companion object {
         const val TAG = "VideoPlayerControlView"
-        private const val ANIMATION_DURATION: Long = 300
     }
 
     interface ControlViewCallback {
@@ -34,6 +35,8 @@ class VideoPlayerControlView : LinearLayout, View.OnClickListener {
 
     private lateinit var playIv: ImageView
     private lateinit var seekBar: SeekBar
+    private lateinit var updateTimeTv: TextView
+    private lateinit var totalTimeTv: TextView
 
     constructor(context: Context) : super(context) { // 따로 지원 안함
         init()
@@ -49,6 +52,8 @@ class VideoPlayerControlView : LinearLayout, View.OnClickListener {
 
         playIv = view.findViewById(R.id.play_pause_iv)
         seekBar = view.findViewById(R.id.seek_bar)
+        updateTimeTv = view.findViewById(R.id.update_time_tv)
+        totalTimeTv = view.findViewById(R.id.total_time_tv)
         playIv.setOnClickListener(this)
     }
 
@@ -62,6 +67,14 @@ class VideoPlayerControlView : LinearLayout, View.OnClickListener {
 
     fun togglePlayOrPause(isPlaying: Boolean) {
         playIv.setImageResource(if (isPlaying) R.drawable.btn_pause else R.drawable.btn_play)
+    }
+
+    fun setUpdateTime(progress: Int) {
+        updateTimeTv.text = DateUtils.formatElapsedTime(progress.toLong() / 1000)
+    }
+
+    fun setTotalTime(duration: Long) {
+        totalTimeTv.text = DateUtils.formatElapsedTime(duration / 1000)
     }
 
     fun getSeekBar() = seekBar

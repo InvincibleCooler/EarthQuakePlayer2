@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="draggable_view">
-        <attr name="player_view_id" format="reference" />
-        <attr name="info_view_id" format="reference" />
-        <attr name="player_view_margin_left" format="dimension" />
-        <attr name="player_view_margin_right" format="dimension" />
-        <attr name="player_view_margin_bottom" format="dimension" />
-        <attr name="minimized_height" format="dimension" />
-        <attr name="window_margin" format="dimension" />
+    <declare-styleable name="youtube_view">
+        <attr name="youtube_top_view_id" format="reference" />
+        <attr name="youtube_margin_left" format="dimension" />
+        <attr name="youtube_margin_right" format="dimension" />
+        <attr name="youtube_margin_bottom" format="dimension" />
+        <attr name="youtube_bottom_view_id" format="reference" />
+        <attr name="youtube_minimized_height" format="dimension" />
     </declare-styleable>
 </resources>

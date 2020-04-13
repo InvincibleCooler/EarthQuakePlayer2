@@ -5,6 +5,7 @@ import android.content.Context
 import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
+import com.eq.jh.earthquakeplayer2.constants.KeyConstant
 import com.eq.jh.earthquakeplayer2.rxbus.RxBus
 import com.eq.jh.earthquakeplayer2.rxbus.RxBusEvent
 import kotlinx.coroutines.Dispatchers
@@ -86,7 +87,7 @@ class VideoSource(private val context: Context) : AbstractMusicSource(context) {
                                 .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, id.toString())
                                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
                                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
-                                .putString(CUSTOM_METADATA_TRACK_SOURCE, contentUri)
+                                .putString(KeyConstant.KEY_CUSTOM_METADATA_TRACK_SOURCE, contentUri)
                                 .build()
                         }
                         .toList()

@@ -3,19 +3,24 @@ package com.eq.jh.earthquakeplayer2.fragment
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
 import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
 import android.view.*
 import android.widget.ImageView
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.eq.jh.earthquakeplayer2.R
-import com.eq.jh.earthquakeplayer2.custom.DraggableLayout
+import com.eq.jh.earthquakeplayer2.constants.KeyConstant
 import com.eq.jh.earthquakeplayer2.custom.VideoPlayerControlView
-import com.eq.jh.earthquakeplayer2.playback.data.AbstractMusicSource
+import com.eq.jh.earthquakeplayer2.custom.YoutubeLayout
 import com.eq.jh.earthquakeplayer2.playback.player.EarthquakePlayer
 import com.google.android.exoplayer2.Player
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Copyright (C) 2020 LOEN Entertainment Inc. All rights reserved.
@@ -36,20 +41,21 @@ class VideoPlayerFragment : BaseFragment() {
             }
         }
 
-        // related to adapter view type
-        private const val VIEW_TYPE_ITEM = 1
+        private const val UPDATE_INITIAL_INTERNAL: Long = 0
+        private const val UPDATE_INTERNAL: Long = 1000
     }
 
-    private lateinit var draggableLayout: DraggableLayout
+    // 상단뷰
+    private lateinit var youtubeLayout: YoutubeLayout
     private lateinit var surfaceView: SurfaceView
-    private lateinit var surfaceHolder: SurfaceHolder
     private lateinit var controlView: VideoPlayerControlView
     private lateinit var closeIv: ImageView
 
+    // 하단뷰
     private lateinit var recyclerView: RecyclerView
     private lateinit var infoAdapter: InfoAdapter
-    private var player: EarthquakePlayer? = null
 
+    private var player: EarthquakePlayer? = null
     private var mediaMetadataCompat: MediaMetadataCompat? = null
     private var isPrepared = false
 
@@ -62,40 +68,51 @@ class VideoPlayerFragment : BaseFragment() {
         }
     }
 
-    private fun createPlayer(context: Context) {
-        Log.d(TAG, "createPlayer")
-
-        player = EarthquakePlayer(context)
-        player?.setCallback(object : EarthquakePlayer.ExoPlayerCallback {
-            override fun onCompletion() {
-                Log.d(TAG, "onCompletion()")
-                // seekTo followed by pause, order is important?
-                player?.seekTo(0)
-                player?.pause()
-                controlView.togglePlayOrPause(false)
-            }
-
-            override fun onPlaybackStatusChanged(state: Int) {
-                Log.d(TAG, "onPlaybackStatusChanged state : $state")
-                if (state == Player.STATE_READY) {
-                    if (!isPrepared) {
-                        player?.start()
-                        controlView.togglePlayOrPause(true)
-                        isPrepared = true
-                    }
-                }
-            }
-
-            override fun onError(error: String) {
-                Log.d(TAG, "onError error : $error")
-            }
-        })
-    }
-
     override fun onDestroy() {
         Log.d(TAG, "onDestroy")
         releasePlayer()
         super.onDestroy()
+    }
+
+    private fun createPlayer(context: Context) {
+        Log.d(TAG, "createPlayer")
+
+        player = EarthquakePlayer(context).also {
+            it.setCallback(object : EarthquakePlayer.ExoPlayerCallback {
+                override fun onCompletion() {
+                    Log.d(TAG, "onCompletion()")
+                    // seekTo followed by pause, order is important?
+                    player?.seekTo(0)
+                    player?.pause()
+                    controlView.togglePlayOrPause(false)
+                }
+
+                override fun onExoPlayerPlaybackStatusChanged(state: Int) {
+                    Log.d(TAG, "onExoPlayerPlaybackStatusChanged state : $state")
+                    if (state == Player.STATE_READY) {
+                        if (!isPrepared) {
+                            player?.start()
+                            isPrepared = true
+
+                            // UI
+                            controlView.togglePlayOrPause(true)
+                            setDuration()
+                        }
+                        startUpdateSeekBar()
+                    }
+                }
+
+                override fun onError(error: String) {
+                    Log.d(TAG, "onError error : $error")
+                }
+            })
+        }
+    }
+
+    private fun setDuration() {
+        val duration = mediaMetadataCompat?.getLong(MediaMetadataCompat.METADATA_KEY_DURATION) ?: 0
+        controlView.getSeekBar().max = duration.toInt()
+        controlView.setTotalTime(duration)
     }
 
     override fun onRestoreInstanceState(inState: Bundle?) {
@@ -113,19 +130,18 @@ class VideoPlayerFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        draggableLayout = view.findViewById(R.id.draggable_layout)
+        youtubeLayout = view.findViewById(R.id.youtube_layout)
         surfaceView = view.findViewById(R.id.surface_view)
         controlView = view.findViewById(R.id.control_view)
         recyclerView = view.findViewById(R.id.recycler_view)
         closeIv = view.findViewById(R.id.close_iv)
 
-        draggableLayout.addDisableDraggingView(controlView.getSeekBar())
-        draggableLayout.setOnDraggableListener(object : DraggableLayout.OnDraggableListener {
+        youtubeLayout.addDisableDraggingView(controlView.getSeekBar())
+        youtubeLayout.setOnDraggableListener(object : YoutubeLayout.OnDraggableListener {
             override fun onMaximized() {
                 if (closeIv.visibility == View.VISIBLE) {
                     closeIv.visibility = View.INVISIBLE
                 }
-//                controlView.alpha = 1f
             }
 
             override fun onMinimized() {
@@ -135,36 +151,30 @@ class VideoPlayerFragment : BaseFragment() {
                 if (closeIv.visibility == View.INVISIBLE) {
                     closeIv.visibility = View.VISIBLE
                 }
-//                controlView.alpha = 1f
-//                closeIv.alpha = 1f
             }
 
             override fun onDragStart() {
-//                Log.d(TAG, "controlView.visibility : ${controlView.visibility}")
-//                Log.d(TAG, "closeIv.visibility : ${closeIv.visibility}")
-//
-//                controlView.alpha = 0f
-//                closeIv.alpha = 0f
                 if (closeIv.visibility == View.VISIBLE) {
                     closeIv.visibility = View.INVISIBLE
                 }
             }
         })
 
-        surfaceHolder = surfaceView.holder
-        surfaceHolder.addCallback(object : SurfaceHolder.Callback {
-            override fun surfaceCreated(holder: SurfaceHolder?) {
-                player?.setDisplay(holder)
-            }
+        (surfaceView.holder).run {
+            addCallback(object : SurfaceHolder.Callback {
+                override fun surfaceCreated(holder: SurfaceHolder?) {
+                    player?.setDisplay(holder)
+                }
 
-            override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
-                player?.setDisplay(holder)
-            }
+                override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
+                    player?.setDisplay(holder)
+                }
 
-            override fun surfaceDestroyed(holder: SurfaceHolder?) {
-                player?.setDisplay(null)
-            }
-        })
+                override fun surfaceDestroyed(holder: SurfaceHolder?) {
+                    player?.setDisplay(null)
+                }
+            })
+        }
 
         recyclerView.run {
             layoutManager = LinearLayoutManager(context)
@@ -174,27 +184,49 @@ class VideoPlayerFragment : BaseFragment() {
 
         // scoped storage를 아래처럼 처리해야 하나?
         // Log.d(TAG, "onViewCreated Environment.isExternalStorageLegacy() : ${Environment.isExternalStorageLegacy()}")
-        val contentUri = Uri.parse(mediaMetadataCompat?.getString(AbstractMusicSource.CUSTOM_METADATA_TRACK_SOURCE))
+        val contentUri = Uri.parse(mediaMetadataCompat?.getString(KeyConstant.KEY_CUSTOM_METADATA_TRACK_SOURCE))
         Log.d(TAG, "onViewCreated contentUri : $contentUri")
         player?.setDataSource(contentUri)
 
         surfaceView.setOnClickListener {
             Log.d(TAG, "surfaceView click")
-            if (draggableLayout.isMaximized()) {
+            if (youtubeLayout.isMaximized()) {
                 toggleControlView()
-            } else if (draggableLayout.isMinimized()) {
-                draggableLayout.maximize()
+            } else if (youtubeLayout.isMinimized()) {
+                youtubeLayout.maximize()
             }
         }
 
         controlView.setControlViewCallback(object : VideoPlayerControlView.ControlViewCallback {
             override fun onPlayClick() {
-                Log.d(TAG, "onPlayClick click")
                 val isPlaying = isPlaying()
-                performPlayClick(isPlaying)
+                if (isPrepared) {
+                    if (isPlaying) {
+                        player?.pause()
+                    } else {
+                        player?.start()
+                    }
+                }
                 controlView.togglePlayOrPause(!isPlaying)
             }
         })
+
+        controlView.getSeekBar().run {
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                    Log.d(TAG, "onProgressChanged progress : $progress")
+                    controlView.setUpdateTime(progress)
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar) {
+                    stopUpdateSeekBar()
+                }
+
+                override fun onStopTrackingTouch(seekBar: SeekBar) {
+                    player?.seekTo(seekBar.progress.toLong())
+                }
+            })
+        }
 
         closeIv.setOnClickListener {
             releasePlayer()
@@ -203,16 +235,12 @@ class VideoPlayerFragment : BaseFragment() {
         }
     }
 
-    private fun performPlayClick(isPlaying: Boolean) {
-        Log.d(TAG, "performPlayClick isPrepared : $isPrepared")
-        if (isPrepared) {
-            Log.d(TAG, "performPlayClick : $isPlaying")
-
-            if (isPlaying) {
-                player?.pause()
-            } else {
-                player?.start()
-            }
+    private fun toggleControlView() {
+        Log.d(TAG, "controlView.visibility : ${controlView.visibility}")
+        if (controlView.visibility == View.VISIBLE) {
+            controlView.visibility = View.INVISIBLE
+        } else if (controlView.visibility == View.INVISIBLE) {
+            controlView.visibility = View.VISIBLE
         }
     }
 
@@ -226,22 +254,40 @@ class VideoPlayerFragment : BaseFragment() {
         isPrepared = false
     }
 
-    private fun toggleControlView() {
-        Log.d(TAG, "controlView.visibility : ${controlView.visibility}")
-        if (controlView.visibility == View.VISIBLE) {
-            controlView.visibility = View.INVISIBLE
-        } else if (controlView.visibility == View.INVISIBLE) {
-            controlView.visibility = View.VISIBLE
+    private val handler = Handler()
+    private val scheduleExecutor = Executors.newSingleThreadScheduledExecutor()
+    private var scheduleFuture: ScheduledFuture<*>? = null
+
+    private fun startUpdateSeekBar() {
+        stopUpdateSeekBar()
+        if (!scheduleExecutor.isShutdown) {
+            scheduleFuture = scheduleExecutor.scheduleAtFixedRate({
+                handler.post { updateProgress() }
+            }, UPDATE_INITIAL_INTERNAL, UPDATE_INTERNAL, TimeUnit.MILLISECONDS)
         }
     }
 
+    private fun updateProgress() {
+        val currentPosition = player?.getCurrentPosition()?.toInt() ?: 0
+        Log.d(TAG, "currentPosition : $currentPosition")
+
+        controlView.getSeekBar().progress = currentPosition
+    }
+
+    private fun stopUpdateSeekBar() {
+        scheduleFuture?.cancel(false)
+    }
+
+
     private inner class InfoAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        private val viewTypeItem = 1
+
         override fun getItemCount(): Int {
             return 20
         }
 
         override fun getItemViewType(position: Int): Int {
-            return VIEW_TYPE_ITEM
+            return viewTypeItem
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -250,7 +296,7 @@ class VideoPlayerFragment : BaseFragment() {
 
         override fun onBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
             when (viewHolder.itemViewType) {
-                VIEW_TYPE_ITEM -> {
+                viewTypeItem -> {
                     val vh = viewHolder as ItemViewHolder
 
                     vh.titleTv.text = "Title $position"

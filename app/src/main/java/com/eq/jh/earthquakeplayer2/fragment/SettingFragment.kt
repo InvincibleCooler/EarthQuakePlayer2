@@ -30,7 +30,6 @@ class SettingFragment : BaseFragment() {
         btn = view.findViewById(R.id.test)
 
         btn.setOnClickListener {
-            openFragment(DragTestFragment.newInstance(), DragTestFragment.TAG)
         }
     }
 }

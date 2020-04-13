@@ -20,9 +20,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.constants.ContentType
+import com.eq.jh.earthquakeplayer2.constants.KeyConstant
 import com.eq.jh.earthquakeplayer2.playback.KEY_MEDIA_METADATA
 import com.eq.jh.earthquakeplayer2.playback.MusicService
-import com.eq.jh.earthquakeplayer2.playback.data.AbstractMusicSource.Companion.CUSTOM_METADATA_TRACK_SOURCE
 import com.eq.jh.earthquakeplayer2.rxbus.RxBus
 import com.eq.jh.earthquakeplayer2.rxbus.RxBusEvent
 import com.eq.jh.earthquakeplayer2.utils.ScreenUtils
@@ -46,40 +46,38 @@ class VideoFragment : BaseFragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var recyclerView: RecyclerView
     private lateinit var videoAdapter: VideoAdapter
-    private var mMediaBrowser: MediaBrowserCompat? = null
+    private var mediaBrowser: MediaBrowserCompat? = null
 
     @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(SongFragment.TAG, "onCreate")
+        Log.d(TAG, "onCreate")
 
         val bundle = Bundle().also {
             it.putString(ContentType.EXTRA_CONTENT_TYPE_KEY, ContentType.CONTENT_TYPE_VIDEO)
         }
 
         activity?.let {
-            mMediaBrowser = MediaBrowserCompat(it, ComponentName(it, MusicService::class.java), object : MediaBrowserCompat.ConnectionCallback() {
+            mediaBrowser = MediaBrowserCompat(it, ComponentName(it, MusicService::class.java), object : MediaBrowserCompat.ConnectionCallback() {
                 override fun onConnected() {
-                    Log.d(SongFragment.TAG, "MediaBrowserCompat.ConnectionCallback onConnected")
+                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnected")
                     // update UI list by data from the server. not any more action like play
 
-                    val mediaId = mMediaBrowser?.root ?: MediaBrowserIdConstant.MEDIA_BROWSER_ID_EMPTY_ROOT
-                    Log.d(SongFragment.TAG, "MediaBrowserCompat.ConnectionCallback onConnected mediaId : $mediaId")
+                    val mediaId = mediaBrowser?.root ?: MediaBrowserIdConstant.MEDIA_BROWSER_ID_EMPTY_ROOT
+                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnected mediaId : $mediaId")
 
-                    mMediaBrowser?.subscribe(mediaId, subscriptionCallback)
+                    mediaBrowser?.subscribe(mediaId, subscriptionCallback)
                 }
 
                 override fun onConnectionSuspended() {
-                    Log.d(SongFragment.TAG, "MediaBrowserCompat.ConnectionCallback onConnectionSuspended")
+                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnectionSuspended")
                 }
 
                 override fun onConnectionFailed() {
-                    Log.d(SongFragment.TAG, "MediaBrowserCompat.ConnectionCallback onConnectionFailed")
+                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnectionFailed")
                 }
             }, bundle)
-        }
 
-        activity?.let {
             videoAdapter = VideoAdapter(it)
         }
 
@@ -112,18 +110,18 @@ class VideoFragment : BaseFragment() {
         super.onStart()
         Log.d(TAG, "onStart")
 
-        val isConnected = mMediaBrowser?.isConnected ?: false
+        val isConnected = mediaBrowser?.isConnected ?: false
         if (!isConnected) {
-            mMediaBrowser?.connect()
+            mediaBrowser?.connect()
         }
     }
 
     override fun onStop() {
         super.onStop()
 
-        val isConnected = mMediaBrowser?.isConnected ?: false
+        val isConnected = mediaBrowser?.isConnected ?: false
         if (isConnected) {
-            mMediaBrowser?.disconnect()
+            mediaBrowser?.disconnect()
         }
     }
 
@@ -179,7 +177,7 @@ class VideoFragment : BaseFragment() {
 
                     val videoName = data?.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
                     val duration = data?.getLong(MediaMetadataCompat.METADATA_KEY_DURATION) ?: 0
-                    val contentUri = Uri.parse(data?.getString(CUSTOM_METADATA_TRACK_SOURCE))
+                    val contentUri = Uri.parse(data?.getString(KeyConstant.KEY_CUSTOM_METADATA_TRACK_SOURCE))
 
                     activity?.let {
                         val bitmap = it.contentResolver.loadThumbnail(contentUri, Size(thumbnailWidth, thumbnailHeight), null)
