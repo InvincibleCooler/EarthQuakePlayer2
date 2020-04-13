@@ -38,8 +38,6 @@ import com.eq.ljh.flags.constants.MediaBrowserIdConstant
 class VideoFragment : BaseFragment() {
     companion object {
         const val TAG = "VideoFragment"
-        private const val VIEW_TYPE_ITEM = 1
-
         fun newInstance() = VideoFragment()
     }
 
@@ -143,6 +141,8 @@ class VideoFragment : BaseFragment() {
     }
 
     private inner class VideoAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        private val viewTypeItem = 1
+
         private var thumbnailWidth = 0
         private var thumbnailHeight = 0
 
@@ -162,7 +162,7 @@ class VideoFragment : BaseFragment() {
         }
 
         override fun getItemViewType(position: Int): Int {
-            return VIEW_TYPE_ITEM
+            return viewTypeItem
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -171,7 +171,7 @@ class VideoFragment : BaseFragment() {
 
         override fun onBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
             when (viewHolder.itemViewType) {
-                VIEW_TYPE_ITEM -> {
+                viewTypeItem -> {
                     val vh = viewHolder as ItemViewHolder
                     val data = items[position].description.extras?.getParcelable<MediaMetadataCompat>(KEY_MEDIA_METADATA)
 

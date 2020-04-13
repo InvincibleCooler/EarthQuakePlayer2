@@ -35,8 +35,6 @@ import com.eq.ljh.flags.constants.MediaBrowserIdConstant
 class SongFragment : BaseFragment() {
     companion object {
         const val TAG = "SongFragment"
-        private const val VIEW_TYPE_ITEM = 1
-
         fun newInstance() = SongFragment()
     }
 
@@ -64,33 +62,6 @@ class SongFragment : BaseFragment() {
                     Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnected mediaId : $mediaId")
 
                     mMediaBrowser?.subscribe(mediaId, subscriptionCallback)
-
-                    // 아래 주석은 내용은 플레이 부분에서 사용할것 같음
-
-                    // Unsubscribe before subscribing is required if this mediaId already has a subscriber
-                    // on this MediaBrowser instance. Subscribing to an already subscribed mediaId will replace
-                    // the callback, but won't trigger the initial callback.onChildrenLoaded.
-                    //
-                    // This is temporary: A bug is being fixed that will make subscribe
-                    // consistently call onChildrenLoaded initially, no matter if it is replacing an existing
-                    // subscriber or not. Currently this only happens if the mediaID has no previous
-                    // subscriber or if the media content changes on the service side, so we need to
-                    // unsubscribe first.
-
-
-//                    // Get a MediaController for the MediaSession.
-//                    mediaController = MediaControllerCompat(context, mediaBrowser.sessionToken).apply {
-//                        registerCallback(MediaControllerCallback())
-//                    }
-
-//                    // 미디어 세션으로 부터 토큰을 얻는다
-//                    mMediaBrowser.sessionToken.also { token ->
-//                        // MediaControllerCompat을 생성한다.
-//                        val mediaController = MediaControllerCompat(this@MediaPlayerActivity, token)
-//                        // 컨트롤러를 저장한다
-//                        MediaControllerCompat.setMediaController(this@MediaPlayerActivity, mediaController)
-//                    }
-//                    // UI 만들기를 끝마친다
                 }
 
                 override fun onConnectionSuspended() {
@@ -101,9 +72,7 @@ class SongFragment : BaseFragment() {
                     Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnectionFailed")
                 }
             }, bundle)
-        }
 
-        activity?.let {
             songAdapter = SongAdapter(it)
         }
 
@@ -169,6 +138,8 @@ class SongFragment : BaseFragment() {
     }
 
     private inner class SongAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        private val viewTypeItem = 1
+
         private var items = mutableListOf<MediaBrowserCompat.MediaItem>()
 
         fun setItems(items: MutableList<MediaBrowserCompat.MediaItem>) {
@@ -180,7 +151,7 @@ class SongFragment : BaseFragment() {
         }
 
         override fun getItemViewType(position: Int): Int {
-            return VIEW_TYPE_ITEM
+            return viewTypeItem
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -189,7 +160,7 @@ class SongFragment : BaseFragment() {
 
         override fun onBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
             when (viewHolder.itemViewType) {
-                VIEW_TYPE_ITEM -> {
+                viewTypeItem -> {
                     val vh = viewHolder as ItemViewHolder
                     val data = items[position].description.extras?.getParcelable<MediaMetadataCompat>(KEY_MEDIA_METADATA)
 
@@ -205,7 +176,7 @@ class SongFragment : BaseFragment() {
                     vh.artistNameTv.text = artistName
 
                     vh.itemView.setOnClickListener {
-
+                        openFragment(SongPlayerFragment.newInstance(data), SongPlayerFragment.TAG)
                     }
                 }
             }
