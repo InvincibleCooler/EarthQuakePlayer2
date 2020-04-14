@@ -238,7 +238,9 @@ class YoutubeLayout : ViewGroup {
         )
 
         verticalDragRange = height - playerView.measuredHeight - playerViewMarginBottom.toInt()
-        Log.d(TAG, "onMeasure verticalDragRange : $verticalDragRange")
+        if (DebugConstant.DEBUG) {
+            Log.d(TAG, "onMeasure verticalDragRange : $verticalDragRange")
+        }
     }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {

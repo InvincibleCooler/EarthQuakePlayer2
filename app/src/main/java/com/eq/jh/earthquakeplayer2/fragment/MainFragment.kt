@@ -8,10 +8,10 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.eq.jh.earthquakeplayer2.MainActivity
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.anim.ZoomOutPageTransformer
 import com.eq.jh.earthquakeplayer2.custom.TitleBar
+import nl.joery.animatedbottombar.AnimatedBottomBar
 
 /**
  * Copyright (C) 2020 LOEN Entertainment Inc. All rights reserved.
@@ -27,6 +27,7 @@ class MainFragment : BaseFragment() {
     }
 
     private lateinit var viewpager2: ViewPager2
+    private lateinit var bottomBar: AnimatedBottomBar
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_main, container, false)
@@ -41,9 +42,8 @@ class MainFragment : BaseFragment() {
         viewpager2.adapter = MainViewPager2Adapter(fragmentList, requireActivity())
         viewpager2.setPageTransformer(ZoomOutPageTransformer())
 
-        if (activity is MainActivity) {
-            (activity as MainActivity).bottomBar.setupWithViewPager2(viewpager2)
-        }
+        bottomBar = view.findViewById(R.id.bottom_bar)
+        bottomBar.setupWithViewPager2(viewpager2)
 
         view.findViewById<TitleBar>(R.id.title_bar).let {
             it.setTitle(getString(R.string.title_main))

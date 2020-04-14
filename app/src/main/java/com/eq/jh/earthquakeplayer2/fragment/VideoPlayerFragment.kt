@@ -70,6 +70,7 @@ class VideoPlayerFragment : BaseFragment() {
 
     override fun onDestroy() {
         Log.d(TAG, "onDestroy")
+        stopUpdateSeekBar()
         releasePlayer()
         super.onDestroy()
     }
@@ -197,7 +198,7 @@ class VideoPlayerFragment : BaseFragment() {
             }
         }
 
-        controlView.setControlViewCallback(object : VideoPlayerControlView.ControlViewCallback {
+        controlView.setVideoControlViewCallback(object : VideoPlayerControlView.VideoControlViewCallback {
             override fun onPlayClick() {
                 val isPlaying = isPlaying()
                 if (isPrepared) {

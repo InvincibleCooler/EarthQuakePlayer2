@@ -23,13 +23,13 @@ class VideoPlayerControlView : LinearLayout, View.OnClickListener {
         const val TAG = "VideoPlayerControlView"
     }
 
-    interface ControlViewCallback {
+    interface VideoControlViewCallback {
         fun onPlayClick() // play pause toggle
     }
 
-    private var listener: ControlViewCallback? = null
+    private var listener: VideoControlViewCallback? = null
 
-    fun setControlViewCallback(listener: ControlViewCallback?) {
+    fun setVideoControlViewCallback(listener: VideoControlViewCallback?) {
         this.listener = listener
     }
 

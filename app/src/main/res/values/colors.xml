@@ -14,8 +14,10 @@
     <color name="black_10">#1a000000</color>
     <color name="black_45">#73000000</color>
     <color name="black_60">#99000000</color>
+    <color name="black_80">#cc000000</color>
     <color name="black_90">#e6000000</color>
 
     <color name="white">#ffffff</color>
+    <color name="white_40">#66ffffff</color>
     <color name="white_50">#80ffffff</color>
 </resources>

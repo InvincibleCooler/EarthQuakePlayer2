@@ -10,10 +10,11 @@ import com.eq.jh.earthquakeplayer2.permissions.PermissionConstants
 import com.eq.jh.earthquakeplayer2.utils.DialogUtils
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.toObservable
-import nl.joery.animatedbottombar.AnimatedBottomBar
 
 class MainActivity : BaseActivity() {
-    lateinit var bottomBar: AnimatedBottomBar
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     private val permissionList = arrayOf(
         PermissionConstants.PERMISSIONS_READ_EXTERNAL_STORAGE
@@ -23,8 +24,6 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        bottomBar = findViewById(R.id.bottom_bar)
 
         requestPermission(permissionList)
     }
@@ -72,4 +71,12 @@ class MainActivity : BaseActivity() {
                 }
             }
     }
+
+//    /**
+//     * 한번에 안꺼져서 아래와 같이 처리함
+//     */
+//    override fun onBackPressed() {
+//        super.onBackPressed()
+//        finish()
+//    }
 }
