@@ -21,6 +21,7 @@ import com.eq.jh.earthquakeplayer2.constants.ContentType
 import com.eq.jh.earthquakeplayer2.constants.KeyConstant
 import com.eq.jh.earthquakeplayer2.playback.KEY_MEDIA_METADATA
 import com.eq.jh.earthquakeplayer2.playback.MusicService
+import com.eq.jh.earthquakeplayer2.playback.data.SongSingleton
 import com.eq.jh.earthquakeplayer2.rxbus.RxBus
 import com.eq.jh.earthquakeplayer2.rxbus.RxBusEvent
 import com.eq.ljh.flags.constants.MediaBrowserIdConstant
@@ -89,6 +90,7 @@ class SongFragment : BaseFragment() {
             Log.d(TAG, "children : $children")
 
             if (MediaBrowserIdConstant.MEDIA_BROWSER_ID_SONG == parentId) {
+                SongSingleton.setSongList(children as ArrayList)
                 songAdapter.setItems(children)
                 songAdapter.notifyDataSetChanged()
             }
@@ -164,7 +166,8 @@ class SongFragment : BaseFragment() {
                     vh.artistNameTv.text = artistName
 
                     vh.itemView.setOnClickListener {
-                        openFragment(SongPlayerFragment.newInstance(items as ArrayList, position), SongPlayerFragment.TAG)
+                        SongSingleton.setCurrentIndex(position)
+                        openFragment(SongPlayerFragment.newInstance(), SongPlayerFragment.TAG)
                     }
                 }
             }

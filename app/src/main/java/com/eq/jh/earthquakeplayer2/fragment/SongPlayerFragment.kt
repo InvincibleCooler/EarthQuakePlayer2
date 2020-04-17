@@ -26,6 +26,7 @@ import com.eq.jh.earthquakeplayer2.constants.KeyConstant
 import com.eq.jh.earthquakeplayer2.custom.SongPlayerControlView
 import com.eq.jh.earthquakeplayer2.playback.KEY_MEDIA_METADATA
 import com.eq.jh.earthquakeplayer2.playback.MusicService
+import com.eq.jh.earthquakeplayer2.playback.data.SongSingleton
 import com.eq.jh.earthquakeplayer2.playback.extensions.currentPlayBackPosition
 import com.eq.jh.earthquakeplayer2.playback.extensions.isPlaying
 import com.eq.jh.earthquakeplayer2.playback.extensions.stateName
@@ -42,17 +43,8 @@ import java.util.concurrent.TimeUnit
 class SongPlayerFragment : BaseFragment() {
     companion object {
         const val TAG = "SongPlayerFragment"
-        private const val ARG_MEDIA_ITEM_LIST = "argMediaItemList"
-        private const val ARG_MEDIA_POSITION = "argMediaPosition"
 
-        fun newInstance(mediaItemList: ArrayList<MediaBrowserCompat.MediaItem>, index: Int): SongPlayerFragment {
-            return SongPlayerFragment().also { f ->
-                f.arguments = Bundle().also { b ->
-                    b.putParcelableArrayList(ARG_MEDIA_ITEM_LIST, mediaItemList)
-                    b.putInt(ARG_MEDIA_POSITION, index)
-                }
-            }
-        }
+        fun newInstance() = SongPlayerFragment()
 
         private const val UPDATE_INITIAL_INTERNAL: Long = 0
         private const val UPDATE_INTERNAL: Long = 1000
@@ -62,9 +54,6 @@ class SongPlayerFragment : BaseFragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var seekBar: SeekBar
     private lateinit var controlView: SongPlayerControlView
-
-    private var mediaItemList: ArrayList<MediaBrowserCompat.MediaItem>? = null
-    private var index = 0
 
     private lateinit var mediaBrowser: MediaBrowserCompat
     private var mediaController: MediaControllerCompat? = null
@@ -154,12 +143,14 @@ class SongPlayerFragment : BaseFragment() {
                 PlaybackStateCompat.STATE_STOPPED -> {
                     if (!isAlreadyStopped) {
                         Log.d(TAG, "onPlaybackStateChanged STATE_STOPPED")
-                        val size = mediaItemList?.size ?: 0
+                        val size = SongSingleton.getSize()
+                        var index = SongSingleton.getCurrentIndex()
                         if (index == (size - 1)) {
                             index = 0
                         } else {
                             index++
                         }
+                        SongSingleton.setCurrentIndex(index)
                         Log.d(TAG, "STATE_STOPPED size : $size, index : $index")
 
                         prepareUpdateUi()
@@ -179,6 +170,7 @@ class SongPlayerFragment : BaseFragment() {
                     if (!isAlreadyPaused) {
                         Log.d(TAG, "onPlaybackStateChanged STATE_PAUSED")
                         controlView.togglePlayOrPause(false)
+                        stopUpdateSeekBar()
 
                         isAlreadyPlayed = false
                         isAlreadyStopped = false
@@ -192,6 +184,7 @@ class SongPlayerFragment : BaseFragment() {
             Log.d(TAG, "onMetadataChanged metadata : $metadata")
             if (metadata != null) {
                 songPlayerAdapter.notifyDataSetChanged()
+                mediaController?.transportControls?.seekTo(0)
             }
         }
 
@@ -206,96 +199,6 @@ class SongPlayerFragment : BaseFragment() {
         override fun onSessionDestroyed() {
             Log.d(TAG, "onSessionDestroyed")
         }
-    }
-
-//    private inner class MediaControllerCallback : MediaControllerCompat.Callback() {
-//        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-//            if (DebugConstant.DEBUG) {
-//                Log.d(TAG, "MediaControllerCallback onPlaybackStateChanged state : $state")
-//            }
-//            when (state?.state) {
-//                PlaybackStateCompat.STATE_NONE -> {
-//                    Log.d(TAG, "onPlaybackStateChanged STATE_NONE")
-//                }
-//                PlaybackStateCompat.STATE_BUFFERING -> {
-//                    Log.d(TAG, "onPlaybackStateChanged STATE_BUFFERING")
-//                }
-//                PlaybackStateCompat.STATE_PLAYING -> {
-//                    if (!isAlreadyPlayed) {
-//                        Log.d(TAG, "onPlaybackStateChanged STATE_PLAYING")
-//                        startUpdateSeekBar()
-//                        controlView.togglePlayOrPause(true)
-//
-//                        isAlreadyPlayed = true
-//                        isAlreadyStopped = false
-//                        isAlreadyPaused = false
-//                    }
-//                }
-//                PlaybackStateCompat.STATE_STOPPED -> {
-//                    if (!isAlreadyStopped) {
-//                        Log.d(TAG, "onPlaybackStateChanged STATE_STOPPED")
-//                        val size = mediaItemList?.size ?: 0
-//                        if (index == (size - 1)) {
-//                            index = 0
-//                        } else {
-//                            index++
-//                        }
-//                        Log.d(TAG, "STATE_STOPPED size : $size, index : $index")
-//
-//                        prepareUpdateUi()
-//
-//                        isAlreadyPlayed = false
-//                        isAlreadyStopped = true
-//                        isAlreadyPaused = false
-//                    }
-//                }
-//                PlaybackStateCompat.STATE_PAUSED -> {
-//                    if (!isFirstStarted) {
-//                        Log.d(TAG, "onPlaybackStateChanged STATE_PAUSED isFirstStarted")
-//                        isFirstStarted = true
-//                        mediaController?.transportControls?.play()
-//                    }
-//
-//                    if (!isAlreadyPaused) {
-//                        Log.d(TAG, "onPlaybackStateChanged STATE_PAUSED")
-//                        controlView.togglePlayOrPause(false)
-//
-//                        isAlreadyPlayed = false
-//                        isAlreadyStopped = false
-//                        isAlreadyPaused = true
-//                    }
-//                }
-//            }
-//        }
-//
-//        override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
-//            Log.d(TAG, "onMetadataChanged metadata : $metadata")
-//            if (metadata != null) {
-//                songPlayerAdapter.notifyDataSetChanged()
-//            }
-//        }
-//
-//        override fun onQueueChanged(queue: MutableList<MediaSessionCompat.QueueItem>?) {
-//            Log.d(TAG, "onQueueChanged")
-//        }
-//
-//        override fun onSessionEvent(event: String?, extras: Bundle?) {
-//            Log.d(TAG, "onSessionEvent")
-//        }
-//
-//        override fun onSessionDestroyed() {
-//            Log.d(TAG, "onSessionDestroyed")
-//        }
-//    }
-
-    override fun onRestoreInstanceState(inState: Bundle?) {
-        mediaItemList = inState?.getParcelableArrayList(ARG_MEDIA_ITEM_LIST)
-        index = inState?.getInt(ARG_MEDIA_POSITION) ?: 0
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.putParcelableArrayList(ARG_MEDIA_ITEM_LIST, mediaItemList)
-        outState.putInt(ARG_MEDIA_POSITION, index)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -366,12 +269,14 @@ class SongPlayerFragment : BaseFragment() {
                 controlView.run {
                     setSongControlViewCallback(object : SongPlayerControlView.SongControlViewCallback {
                         override fun onPreviousClick() {
-                            val size = mediaItemList?.size ?: 0
+                            val size = SongSingleton.getSize()
+                            var index = SongSingleton.getCurrentIndex()
                             if (index == 0) {
                                 index = size - 1
                             } else {
                                 index--
                             }
+                            SongSingleton.setCurrentIndex(index)
                             prepareUpdateUi()
                         }
 
@@ -387,12 +292,14 @@ class SongPlayerFragment : BaseFragment() {
                         }
 
                         override fun onNextClick() {
-                            val size = mediaItemList?.size ?: 0
+                            val size = SongSingleton.getSize()
+                            var index = SongSingleton.getCurrentIndex()
                             if (index == size - 1) {
                                 index = 0
                             } else {
                                 index++
                             }
+                            SongSingleton.setCurrentIndex(index)
                             prepareUpdateUi()
                         }
 
@@ -427,7 +334,8 @@ class SongPlayerFragment : BaseFragment() {
     }
 
     private fun getCurrentMediaMetadata(): MediaMetadataCompat? {
-        return mediaItemList?.get(index)?.description?.extras?.getParcelable(KEY_MEDIA_METADATA)
+        val index = SongSingleton.getCurrentIndex()
+        return SongSingleton.getSongList()?.get(index)?.description?.extras?.getParcelable(KEY_MEDIA_METADATA)
     }
 
     private fun getCurrentUri(): Uri? {
@@ -437,10 +345,6 @@ class SongPlayerFragment : BaseFragment() {
         } else {
             null
         }
-    }
-
-    private fun getCurrentMediaId(): String? {
-        return getCurrentMediaMetadata()?.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
     }
 
     private fun getCurrentDuration(): Long {
