@@ -30,7 +30,7 @@ class EarthquakePlayer(val context: Context) {
 
     interface ExoPlayerCallback {
         fun onCompletion()
-        fun onExoPlayerPlaybackStatusChanged(state: Int)
+        fun onExoPlayerPlaybackStatusChanged(playWhenReady: Boolean, state: Int)
         fun onError(error: String)
     }
 
@@ -52,12 +52,7 @@ class EarthquakePlayer(val context: Context) {
 
     private val eventListener = object : Player.EventListener {
         override fun onPlayerError(error: ExoPlaybackException) {
-            if (error == null) {
-                return
-            }
-
-            var errorMsg = ""
-            errorMsg = when (error.type) {
+            var errorMsg = when (error.type) {
                 ExoPlaybackException.TYPE_SOURCE -> error.sourceException.message ?: ""
                 ExoPlaybackException.TYPE_RENDERER -> error.rendererException.message ?: ""
                 ExoPlaybackException.TYPE_UNEXPECTED -> error.unexpectedException.message ?: ""
@@ -70,7 +65,6 @@ class EarthquakePlayer(val context: Context) {
         }
 
         override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
-            Log.d(TAG, "playWhenReady : $playWhenReady, playbackState : $playbackState")
             when (playbackState) {
                 Player.STATE_IDLE, Player.STATE_BUFFERING, Player.STATE_READY -> {
                     if (playbackState == Player.STATE_BUFFERING) {
@@ -79,7 +73,7 @@ class EarthquakePlayer(val context: Context) {
                         RxBus.publish(RxBusEvent.EventLoadingProgress(false))
                     }
 
-                    callback?.onExoPlayerPlaybackStatusChanged(playbackState)
+                    callback?.onExoPlayerPlaybackStatusChanged(playWhenReady, playbackState)
                 }
                 Player.STATE_ENDED -> {
                     callback?.onCompletion()
@@ -161,4 +155,26 @@ class EarthquakePlayer(val context: Context) {
     }
 
     private fun buildDataSourceFactory() = DefaultDataSourceFactory(context, Util.getUserAgent(context, "Earthquake2"))
+
+    // for debug
+    fun stateName(state: Int): String {
+        return when (state) {
+            Player.STATE_IDLE -> {
+                "STATE_IDLE"
+            }
+            Player.STATE_BUFFERING -> {
+                "STATE_BUFFERING"
+            }
+            Player.STATE_READY -> {
+                "STATE_READY"
+            }
+            Player.STATE_ENDED -> {
+                "STATE_ENDED"
+            }
+            else -> {
+                "illegal state"
+            }
+        }
+    }
+
 }

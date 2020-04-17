@@ -322,7 +322,7 @@ class YoutubeLayout : ViewGroup {
             Log.d(TAG, "onInterceptTouchEvent action : $action")
         }
 
-        if (disableDragViewItem?.visibility == View.VISIBLE) { // seekbar 처리
+        if (disableDragViewItem.visibility == View.VISIBLE) { // seekbar 처리
             if (disableDraggingChecker.getItemValue(ev)) {
                 return false
             }
@@ -520,12 +520,6 @@ class YoutubeLayout : ViewGroup {
     private lateinit var disableDragViewItem: View
 
     fun addDisableDraggingView(view: View) { // seekbar 처리가 필요함
-        if (DebugConstant.DEBUG) {
-            Log.d(TAG, "addDisableDraggingView : $view")
-        }
-        if (view == null) {
-            return
-        }
         disableDragViewItem = view
     }
 

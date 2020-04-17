@@ -88,7 +88,7 @@ class VideoPlayerFragment : BaseFragment() {
                     controlView.togglePlayOrPause(false)
                 }
 
-                override fun onExoPlayerPlaybackStatusChanged(state: Int) {
+                override fun onExoPlayerPlaybackStatusChanged(playWhenReady: Boolean, state: Int) {
                     Log.d(TAG, "onExoPlayerPlaybackStatusChanged state : $state")
                     if (state == Player.STATE_READY) {
                         if (!isPrepared) {
@@ -278,7 +278,6 @@ class VideoPlayerFragment : BaseFragment() {
     private fun stopUpdateSeekBar() {
         scheduleFuture?.cancel(false)
     }
-
 
     private inner class InfoAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private val viewTypeItem = 1

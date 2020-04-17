@@ -22,9 +22,9 @@ class SongPlayerControlView : LinearLayout {
 
     interface SongControlViewCallback {
         fun onPreviousClick()
-        fun onRewindClick()
+//        fun onRewindClick()
         fun onPlayClick()
-        fun onFastForwardClick()
+//        fun onFastForwardClick()
         fun onNextClick()
     }
 
@@ -49,17 +49,17 @@ class SongPlayerControlView : LinearLayout {
             listener?.onPreviousClick()
         }
 
-        view.rewind_layout.setOnClickListener {
-            listener?.onRewindClick()
-        }
+//        view.rewind_layout.setOnClickListener {
+//            listener?.onRewindClick()
+//        }
 
         view.play_layout.setOnClickListener {
             listener?.onPlayClick()
         }
 
-        view.ff_layout.setOnClickListener {
-            listener?.onFastForwardClick()
-        }
+//        view.ff_layout.setOnClickListener {
+//            listener?.onFastForwardClick()
+//        }
 
         view.next_layout.setOnClickListener {
             listener?.onNextClick()

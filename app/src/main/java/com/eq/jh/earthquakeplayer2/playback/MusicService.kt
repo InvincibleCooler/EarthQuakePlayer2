@@ -1,22 +1,22 @@
 package com.eq.jh.earthquakeplayer2.playback
 
 import android.os.Bundle
-import android.os.SystemClock
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import androidx.media.MediaBrowserServiceCompat
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.constants.ContentType
+import com.eq.jh.earthquakeplayer2.constants.DebugConstant
 import com.eq.jh.earthquakeplayer2.playback.data.SongSource
 import com.eq.jh.earthquakeplayer2.playback.data.VideoSource
 import com.eq.jh.earthquakeplayer2.playback.player.EarthquakePlaybackPreparer
 import com.eq.jh.earthquakeplayer2.playback.player.EarthquakePlayer
 import com.eq.ljh.flags.constants.MediaBrowserIdConstant
-import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +56,7 @@ class MusicService : MediaBrowserServiceCompat() {
     // media session
     private lateinit var player: EarthquakePlayer
     private lateinit var mediaSession: MediaSessionCompat
-    //    private lateinit var mediaController: MediaControllerCompat
+    private lateinit var mediaController: MediaControllerCompat
     private lateinit var mediaSessionConnector: MediaSessionConnector
 
     @Suppress("PropertyName")
@@ -64,59 +64,20 @@ class MusicService : MediaBrowserServiceCompat() {
         .setState(PlaybackStateCompat.STATE_NONE, 0, 0f)
         .build()
 
-    //    private fun updatePlaybackState() {
-//        val state = player.get
-//    }
-//
-    private fun getAvailableActions(): Long {
-        return PlaybackStateCompat.ACTION_STOP or
-                PlaybackStateCompat.ACTION_PAUSE or
-                PlaybackStateCompat.ACTION_PLAY or
-                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                PlaybackStateCompat.ACTION_PLAY_PAUSE
-    }
-
-//    private fun getAvailableActions(): Long {
-//        var actions = PlaybackStateCompat.ACTION_PLAY_PAUSE or
-//                PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
-//                PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH or
-//                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-//                PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-//        actions = if (mPlayback.isPlaying()) {
-//            actions or PlaybackStateCompat.ACTION_PAUSE
-//        } else {
-//            actions or PlaybackStateCompat.ACTION_PLAY
-//        }
-//        return actions
-//    }
+//    private var isPrepared = false
 
     private fun createPlayer(): EarthquakePlayer {
         Log.d(TAG, "createPlayer")
         player = EarthquakePlayer(this).also {
             it.setCallback(object : EarthquakePlayer.ExoPlayerCallback {
                 override fun onCompletion() {
-                    Log.d(TAG, "onCompletion()")
+                    if (DebugConstant.DEBUG) {
+                        Log.d(TAG, "onCompletion()")
+                    }
                 }
 
-                override fun onExoPlayerPlaybackStatusChanged(state: Int) {
-                    Log.d(TAG, "onExoPlayerPlaybackStatusChanged state : $state")
-                    val mediaSessionPlaybackStateBuilder = PlaybackStateCompat.Builder().setActions(getAvailableActions())
-                    var mediaSessionPlaybackStateCompat = PlaybackStateCompat.STATE_NONE
-
-                    when (state) {
-                        Player.STATE_IDLE -> {
-                            mediaSessionPlaybackStateCompat = PlaybackStateCompat.STATE_NONE
-                        }
-                        Player.STATE_BUFFERING -> {
-                            mediaSessionPlaybackStateCompat = PlaybackStateCompat.STATE_BUFFERING
-                        }
-                        Player.STATE_READY -> {
-                            mediaSessionPlaybackStateCompat = if (player.isPlaying()) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
-                        }
-                    }
-                    mediaSessionPlaybackStateBuilder.setState(mediaSessionPlaybackStateCompat, player.getCurrentPosition(), 1f, SystemClock.elapsedRealtime())
-                    mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.build())
+                override fun onExoPlayerPlaybackStatusChanged(playWhenReady: Boolean, state: Int) {
+                    Log.d(TAG, "onExoPlayerPlaybackStatusChanged playWhenReady : $playWhenReady, state : ${player.stateName(state)}")
                 }
 
                 override fun onError(error: String) {
@@ -131,61 +92,40 @@ class MusicService : MediaBrowserServiceCompat() {
     private fun createMediaSession(): MediaSessionCompat {
         mediaSession = MediaSessionCompat(this, "MusicService").apply {
             isActive = true
-            setCallback(object : MediaSessionCompat.Callback() {
-                override fun onPlay() {
-                    Log.d(TAG, "MediaSessionCompat.Callback onPlay")
-                }
-
-                override fun onPause() {
-                    Log.d(TAG, "MediaSessionCompat.Callback onPause")
-                }
-
-                override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
-                    Log.d(TAG, "MediaSessionCompat.Callback onPlayFromMediaId mediaId : $mediaId")
-                }
-
-                override fun onStop() {
-                    Log.d(TAG, "MediaSessionCompat.Callback onStop")
-                }
-
-                override fun onSeekTo(pos: Long) {
-                    Log.d(TAG, "MediaSessionCompat.Callback onSeekTo pos : $pos")
-                }
-
-                override fun onSkipToNext() {
-                    Log.d(TAG, "MediaSessionCompat.Callback onSkipToNext")
-                }
-
-                override fun onSkipToPrevious() {
-                    Log.d(TAG, "MediaSessionCompat.Callback onSkipToPrevious")
-                }
-
-                override fun onFastForward() {
-                    Log.d(TAG, "MediaSessionCompat.Callback onFastForward")
-                }
-
-                override fun onRewind() {
-                    Log.d(TAG, "MediaSessionCompat.Callback onRewind")
-                }
-            })
         }
         return mediaSession
     }
 
-//    private fun createMediaController(): MediaControllerCompat {
-//        mediaController = MediaControllerCompat(this, mediaSession).also {
-//            it.registerCallback(object : MediaControllerCompat.Callback() {
-//                override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
-//                    Log.d(TAG, "MediaControllerCallback onMetadataChanged metadata : $metadata")
-//                }
-//
-//                override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-//                    Log.d(TAG, "MediaControllerCallback onPlaybackStateChanged state : $state")
-//                }
-//            })
-//        }
-//        return mediaController
-//    }
+    private fun createMediaController(): MediaControllerCompat {
+        mediaController = MediaControllerCompat(this, mediaSession).also {
+            it.registerCallback(object : MediaControllerCompat.Callback() {
+                override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
+                    Log.d(TAG, "MediaControllerCallback onMetadataChanged metadata : $metadata")
+                }
+
+                override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+                    when (state?.state) {
+                        PlaybackStateCompat.STATE_NONE -> {
+                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_NONE")
+                        }
+                        PlaybackStateCompat.STATE_BUFFERING -> {
+                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_BUFFERING")
+                        }
+                        PlaybackStateCompat.STATE_PLAYING -> {
+                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_PLAYING")
+                        }
+                        PlaybackStateCompat.STATE_STOPPED -> {
+                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_STOPPED")
+                        }
+                        PlaybackStateCompat.STATE_PAUSED -> {
+                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_PAUSED")
+                        }
+                    }
+                }
+            })
+        }
+        return mediaController
+    }
 
     private fun createMediaSessionConnector(): MediaSessionConnector {
         mediaSessionConnector = MediaSessionConnector(mediaSession).also {
@@ -194,7 +134,6 @@ class MusicService : MediaBrowserServiceCompat() {
 
             it.setPlayer(player.getPlayer())
             it.setPlaybackPreparer(playbackPreparer)
-//            it.setQueueNavigator(EarthquakeQueueNavigator(mediaSession))
         }
         return mediaSessionConnector
     }
@@ -205,7 +144,7 @@ class MusicService : MediaBrowserServiceCompat() {
         createPlayer()
         createMediaSession()
         sessionToken = mediaSession.sessionToken
-//        createMediaController()
+        createMediaController()
         createMediaSessionConnector()
 
         /**
@@ -229,12 +168,8 @@ class MusicService : MediaBrowserServiceCompat() {
         mediaSession.release()
     }
 
-    override fun onGetRoot(
-        clientPackageName: String,
-        clientUid: Int,
-        rootHints: Bundle?
-    ): BrowserRoot? {
-
+    override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
+        Log.d(TAG, "onGetRoot")
         /*
          * By default, all known clients are permitted to search, but only tell unknown callers
          * about search if permitted by the [BrowseTree].
@@ -273,84 +208,90 @@ class MusicService : MediaBrowserServiceCompat() {
             return
         }
 
-        if (MediaBrowserIdConstant.MEDIA_BROWSER_ID_SONG == parentId) {
-            serviceScope.launch {
-                songSource.load()
-            }
-            // If the media source is ready, the results will be set synchronously here.
-            val resultsSent = songSource.whenReady { successfullyInitialized ->
-                if (successfullyInitialized) {
-                    val list = songSource.iterator()
-                    val mediaItemList = arrayListOf<MediaBrowserCompat.MediaItem>()
+        when (parentId) {
+            MediaBrowserIdConstant.MEDIA_BROWSER_ID_SONG -> {
+                serviceScope.launch {
+                    songSource.load()
+                }
+                // If the media source is ready, the results will be set synchronously here.
+                val resultsSent = songSource.whenReady { successfullyInitialized ->
+                    if (successfullyInitialized) {
+                        val list = songSource.iterator()
+                        val mediaItemList = arrayListOf<MediaBrowserCompat.MediaItem>()
 
-                    for (data in list) {
-                        val bundle = Bundle().apply {
-                            putParcelable(KEY_MEDIA_METADATA, data)
+                        for (data in list) {
+                            val bundle = Bundle().apply {
+                                putParcelable(KEY_MEDIA_METADATA, data)
+                            }
+
+                            val description = MediaDescriptionCompat.Builder().apply {
+                                val mediaId = parentId + "/" + data.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
+                                setMediaId(mediaId)
+                                setExtras(bundle)
+                            }.build()
+                            mediaItemList += MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_BROWSABLE)
                         }
-
-                        val description = MediaDescriptionCompat.Builder().apply {
-                            val mediaId = parentId + "/" + data.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
-                            setMediaId(mediaId)
-                            setExtras(bundle)
-                        }.build()
-                        mediaItemList += MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_BROWSABLE)
+                        result.sendResult(mediaItemList)
+                    } else {
+                        mediaSession.sendSessionEvent(LOAD_SONG_FAILURE, null)
+                        result.sendResult(null)
                     }
-                    result.sendResult(mediaItemList)
-                } else {
-                    result.sendResult(null)
+                }
+                // If the results are not ready, the service must "detach" the results before
+                // the method returns. After the source is ready, the lambda above will run,
+                // and the caller will be notified that the results are ready.
+                //
+                // See [MediaItemFragmentViewModel.subscriptionCallback] for how this is passed to the
+                // UI/displayed in the [RecyclerView].
+                if (!resultsSent) {
+                    result.detach()
                 }
             }
+            MediaBrowserIdConstant.MEDIA_BROWSER_ID_VIDEO -> {
+                serviceScope.launch {
+                    videoSource.load()
+                }
+                // If the media source is ready, the results will be set synchronously here.
+                val resultsSent = videoSource.whenReady { successfullyInitialized ->
+                    if (successfullyInitialized) {
+                        val list = videoSource.iterator()
+                        val mediaItemList = arrayListOf<MediaBrowserCompat.MediaItem>()
 
-            // If the results are not ready, the service must "detach" the results before
-            // the method returns. After the source is ready, the lambda above will run,
-            // and the caller will be notified that the results are ready.
-            //
-            // See [MediaItemFragmentViewModel.subscriptionCallback] for how this is passed to the
-            // UI/displayed in the [RecyclerView].
-            if (!resultsSent) {
-                result.detach()
-            }
-        } else if (MediaBrowserIdConstant.MEDIA_BROWSER_ID_VIDEO == parentId) {
-            serviceScope.launch {
-                videoSource.load()
-            }
-            // If the media source is ready, the results will be set synchronously here.
-            val resultsSent = videoSource.whenReady { successfullyInitialized ->
-                if (successfullyInitialized) {
-                    val list = videoSource.iterator()
-                    val mediaItemList = arrayListOf<MediaBrowserCompat.MediaItem>()
+                        for (data in list) {
+                            val bundle = Bundle().apply {
+                                putParcelable(KEY_MEDIA_METADATA, data)
+                            }
 
-                    for (data in list) {
-                        val bundle = Bundle().apply {
-                            putParcelable(KEY_MEDIA_METADATA, data)
+                            val description = MediaDescriptionCompat.Builder().apply {
+                                val mediaId = parentId + "/" + data.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
+                                setMediaId(mediaId)
+                                setExtras(bundle)
+                            }.build()
+                            mediaItemList += MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_BROWSABLE)
                         }
-
-                        val description = MediaDescriptionCompat.Builder().apply {
-                            val mediaId = parentId + "/" + data.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
-                            setMediaId(mediaId)
-                            setExtras(bundle)
-                        }.build()
-                        mediaItemList += MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_BROWSABLE)
+                        result.sendResult(mediaItemList)
+                    } else {
+                        mediaSession.sendSessionEvent(LOAD_VIDEO_FAILURE, null)
+                        result.sendResult(null)
                     }
-                    result.sendResult(mediaItemList)
-                } else {
-                    result.sendResult(null)
+                }
+                // If the results are not ready, the service must "detach" the results before
+                // the method returns. After the source is ready, the lambda above will run,
+                // and the caller will be notified that the results are ready.
+                //
+                // See [MediaItemFragmentViewModel.subscriptionCallback] for how this is passed to the
+                // UI/displayed in the [RecyclerView].
+                if (!resultsSent) {
+                    result.detach()
                 }
             }
-
-            // If the results are not ready, the service must "detach" the results before
-            // the method returns. After the source is ready, the lambda above will run,
-            // and the caller will be notified that the results are ready.
-            //
-            // See [MediaItemFragmentViewModel.subscriptionCallback] for how this is passed to the
-            // UI/displayed in the [RecyclerView].
-            if (!resultsSent) {
-                result.detach()
+            else -> {
+                result.sendResult(null)
             }
-        } else {
-            result.sendResult(null)
         }
     }
 }
 
 const val KEY_MEDIA_METADATA = "KEY_MEDIA_METADATA"
+const val LOAD_SONG_FAILURE = "LOAD_SONG_FAILURE"
+const val LOAD_VIDEO_FAILURE = "LOAD_VIDEO_FAILURE"

@@ -16,7 +16,6 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.constants.ContentType
 import com.eq.jh.earthquakeplayer2.constants.KeyConstant
@@ -41,7 +40,7 @@ class SongFragment : BaseFragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var recyclerView: RecyclerView
     private lateinit var songAdapter: SongAdapter
-    private var mMediaBrowser: MediaBrowserCompat? = null
+    private lateinit var mediaBrowser: MediaBrowserCompat
 
     @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,27 +51,27 @@ class SongFragment : BaseFragment() {
             it.putString(ContentType.EXTRA_CONTENT_TYPE_KEY, ContentType.CONTENT_TYPE_SONG)
         }
 
-        activity?.let {
-            mMediaBrowser = MediaBrowserCompat(it, ComponentName(it, MusicService::class.java), object : MediaBrowserCompat.ConnectionCallback() {
+        requireActivity().let {
+            mediaBrowser = MediaBrowserCompat(it, ComponentName(it, MusicService::class.java), object : MediaBrowserCompat.ConnectionCallback() {
                 override fun onConnected() {
-                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnected")
+                    Log.d(TAG, "onConnected")
                     // update UI list by data from the server. not any more action like play
 
-                    val mediaId = mMediaBrowser?.root ?: MediaBrowserIdConstant.MEDIA_BROWSER_ID_EMPTY_ROOT
-                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnected mediaId : $mediaId")
+                    val mediaId = mediaBrowser.root
+                    Log.d(TAG, "onConnected mediaId : $mediaId")
 
-                    mMediaBrowser?.subscribe(mediaId, subscriptionCallback)
+                    mediaBrowser.subscribe(mediaId, subscriptionCallback)
                 }
 
                 override fun onConnectionSuspended() {
-                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnectionSuspended")
+                    Log.d(TAG, "onConnectionSuspended")
                 }
 
                 override fun onConnectionFailed() {
-                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnectionFailed")
+                    Log.d(TAG, "onConnectionFailed")
                 }
             }, bundle)
-
+            mediaBrowser.connect()
             songAdapter = SongAdapter(it)
         }
 
@@ -85,7 +84,7 @@ class SongFragment : BaseFragment() {
 
     private val subscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
         override fun onChildrenLoaded(parentId: String, children: MutableList<MediaBrowserCompat.MediaItem>) {
-            Log.d(TAG, "MediaBrowserCompat.SubscriptionCallback onChildrenLoaded")
+            Log.d(TAG, "onChildrenLoaded")
             Log.d(TAG, "parentId : $parentId")
             Log.d(TAG, "children : $children")
 
@@ -96,28 +95,17 @@ class SongFragment : BaseFragment() {
         }
 
         override fun onError(parentId: String) {
-            Log.d(TAG, "MediaBrowserCompat.SubscriptionCallback onError")
+            Log.d(TAG, "onError")
             Log.d(TAG, "parentId : $parentId")
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart")
-
-        val isConnected = mMediaBrowser?.isConnected ?: false
-        if (!isConnected) {
-            mMediaBrowser?.connect()
+    override fun onDestroy() {
+        Log.d(TAG, "onDestroy")
+        if (mediaBrowser.isConnected) {
+            mediaBrowser.disconnect()
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
-
-        val isConnected = mMediaBrowser?.isConnected ?: false
-        if (isConnected) {
-            mMediaBrowser?.disconnect()
-        }
+        super.onDestroy()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -169,14 +157,14 @@ class SongFragment : BaseFragment() {
                     val contentUri = Uri.parse(data?.getString(KeyConstant.KEY_CUSTOM_METADATA_TRACK_SOURCE))
                     val albumArtUri = data?.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI)
 
-                    activity?.let {
-                        Glide.with(it).load(albumArtUri).into(vh.thumbIv)
-                    }
+//                    activity?.let {
+//                        Glide.with(it).load(albumArtUri).into(vh.thumbIv)
+//                    }
                     vh.songNameTv.text = songName
                     vh.artistNameTv.text = artistName
 
                     vh.itemView.setOnClickListener {
-                        openFragment(SongPlayerFragment.newInstance(data), SongPlayerFragment.TAG)
+                        openFragment(SongPlayerFragment.newInstance(items as ArrayList, position), SongPlayerFragment.TAG)
                     }
                 }
             }

@@ -7,6 +7,7 @@ import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
 import android.webkit.MimeTypeMap
+import com.eq.jh.earthquakeplayer2.constants.DebugConstant
 import com.eq.jh.earthquakeplayer2.constants.KeyConstant
 import com.eq.jh.earthquakeplayer2.rxbus.RxBus
 import com.eq.jh.earthquakeplayer2.rxbus.RxBusEvent
@@ -67,8 +68,8 @@ class SongSource(private val context: Context) : AbstractMusicSource(context) {
             //        String orderBy = MediaStore.Audio.Media.DATE_MODIFIED;
             val orderBy = MediaStore.Audio.Media.TITLE
 
-            Log.d(TAG, "AUDIO_URI : ${AUDIO_URI.toString()}")
-            Log.d(TAG, "GENRE_URI : ${GENRE_URI.toString()}")
+            Log.d(TAG, "AUDIO_URI : $AUDIO_URI")
+            Log.d(TAG, "GENRE_URI : $GENRE_URI")
 
             context.contentResolver.query(AUDIO_URI, mSongProjection, selection, selectionArgs, "$orderBy ASC").use {
                 if (it?.moveToFirst() == true) {
@@ -93,17 +94,19 @@ class SongSource(private val context: Context) : AbstractMusicSource(context) {
                                 }
                             }
 
-                            Log.d(TAG, "------------------")
-                            Log.d(TAG, "id : $id")
-                            Log.d(TAG, "title : $title")
-                            Log.d(TAG, "artist : $artist")
-                            Log.d(TAG, "album : $album")
-                            Log.d(TAG, "albumId : $albumId")
-                            Log.d(TAG, "track : $track")
-                            Log.d(TAG, "duration : $duration")
-                            Log.d(TAG, "contentUri : $contentUri")
-                            Log.d(TAG, "albumArtUri : $albumArtUri")
-                            Log.d(TAG, "genreName : $genreName")
+                            if (DebugConstant.DEBUG) {
+                                Log.d(TAG, "------------------")
+                                Log.d(TAG, "id : $id")
+                                Log.d(TAG, "title : $title")
+                                Log.d(TAG, "artist : $artist")
+                                Log.d(TAG, "album : $album")
+                                Log.d(TAG, "albumId : $albumId")
+                                Log.d(TAG, "track : $track")
+                                Log.d(TAG, "duration : $duration")
+                                Log.d(TAG, "contentUri : $contentUri")
+                                Log.d(TAG, "albumArtUri : $albumArtUri")
+                                Log.d(TAG, "genreName : $genreName")
+                            }
 
                             MediaMetadataCompat.Builder()
                                 .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, id.toString())

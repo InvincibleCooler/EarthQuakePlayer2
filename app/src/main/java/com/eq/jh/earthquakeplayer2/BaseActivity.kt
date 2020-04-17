@@ -72,7 +72,9 @@ open class BaseActivity : AppCompatActivity(), FragmentManager.OnBackStackChange
         val ft = fm.beginTransaction()
 
         val count = fm.backStackEntryCount
-        Log.d(TAG, "count : $count")
+        if (DebugConstant.DEBUG) {
+            Log.d(TAG, "count : $count")
+        }
 
         if (count > 0) {
             for (i in (count - 1) downTo 0) {

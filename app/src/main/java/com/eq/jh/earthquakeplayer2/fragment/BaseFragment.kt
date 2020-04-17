@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import com.eq.jh.earthquakeplayer2.BaseActivity
+import com.eq.jh.earthquakeplayer2.constants.DebugConstant
 
 /**
  * Copyright (C) 2020 LOEN Entertainment Inc. All rights reserved.
@@ -24,10 +25,12 @@ open class BaseFragment : Fragment() {
     }
 
     open fun openFragment(fragment: BaseFragment, tag: String) {
-        Log.d(TAG, "open() f:$fragment tag:$tag")
+        if (DebugConstant.DEBUG) {
+            Log.d(TAG, "open() f:$fragment tag:$tag")
+        }
 
         if (activity is BaseActivity) {
-            (activity as BaseActivity)?.let {
+            (activity as BaseActivity).let {
                 it.addUniqueFragment(fragment, tag)
             }
         }
@@ -35,7 +38,7 @@ open class BaseFragment : Fragment() {
 
     fun removeFragment(fragment: BaseFragment, tag: String) {
         if (activity is BaseActivity) {
-            (activity as BaseActivity)?.let {
+            (activity as BaseActivity).let {
                 it.removeFragment(fragment, tag)
             }
         }

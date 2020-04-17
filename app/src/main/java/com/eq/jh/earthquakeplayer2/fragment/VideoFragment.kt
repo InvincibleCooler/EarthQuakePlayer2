@@ -44,7 +44,7 @@ class VideoFragment : BaseFragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var recyclerView: RecyclerView
     private lateinit var videoAdapter: VideoAdapter
-    private var mediaBrowser: MediaBrowserCompat? = null
+    private lateinit var mediaBrowser: MediaBrowserCompat
 
     @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,27 +55,27 @@ class VideoFragment : BaseFragment() {
             it.putString(ContentType.EXTRA_CONTENT_TYPE_KEY, ContentType.CONTENT_TYPE_VIDEO)
         }
 
-        activity?.let {
+        requireActivity().let {
             mediaBrowser = MediaBrowserCompat(it, ComponentName(it, MusicService::class.java), object : MediaBrowserCompat.ConnectionCallback() {
                 override fun onConnected() {
-                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnected")
+                    Log.d(TAG, "onConnected")
                     // update UI list by data from the server. not any more action like play
 
-                    val mediaId = mediaBrowser?.root ?: MediaBrowserIdConstant.MEDIA_BROWSER_ID_EMPTY_ROOT
-                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnected mediaId : $mediaId")
+                    val mediaId = mediaBrowser.root
+                    Log.d(TAG, "onConnected mediaId : $mediaId")
 
-                    mediaBrowser?.subscribe(mediaId, subscriptionCallback)
+                    mediaBrowser.subscribe(mediaId, subscriptionCallback)
                 }
 
                 override fun onConnectionSuspended() {
-                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnectionSuspended")
+                    Log.d(TAG, "onConnectionSuspended")
                 }
 
                 override fun onConnectionFailed() {
-                    Log.d(TAG, "MediaBrowserCompat.ConnectionCallback onConnectionFailed")
+                    Log.d(TAG, "onConnectionFailed")
                 }
             }, bundle)
-
+            mediaBrowser.connect()
             videoAdapter = VideoAdapter(it)
         }
 
@@ -88,7 +88,7 @@ class VideoFragment : BaseFragment() {
 
     private val subscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
         override fun onChildrenLoaded(parentId: String, children: MutableList<MediaBrowserCompat.MediaItem>) {
-            Log.d(TAG, "MediaBrowserCompat.SubscriptionCallback onChildrenLoaded")
+            Log.d(TAG, "onChildrenLoaded")
             Log.d(TAG, "parentId : $parentId")
             Log.d(TAG, "children : $children")
 
@@ -99,28 +99,17 @@ class VideoFragment : BaseFragment() {
         }
 
         override fun onError(parentId: String) {
-            Log.d(TAG, "MediaBrowserCompat.SubscriptionCallback onError")
+            Log.d(TAG, "onError")
             Log.d(TAG, "parentId : $parentId")
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart")
-
-        val isConnected = mediaBrowser?.isConnected ?: false
-        if (!isConnected) {
-            mediaBrowser?.connect()
+    override fun onDestroy() {
+        Log.d(TAG, "onDestroy")
+        if (mediaBrowser.isConnected) {
+            mediaBrowser.disconnect()
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
-
-        val isConnected = mediaBrowser?.isConnected ?: false
-        if (isConnected) {
-            mediaBrowser?.disconnect()
-        }
+        super.onDestroy()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
