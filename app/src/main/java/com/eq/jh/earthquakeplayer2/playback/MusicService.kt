@@ -1,5 +1,8 @@
 package com.eq.jh.earthquakeplayer2.playback
 
+import android.app.Service
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
@@ -8,6 +11,8 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.media.MediaBrowserServiceCompat
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.constants.ContentType
@@ -16,6 +21,7 @@ import com.eq.jh.earthquakeplayer2.playback.data.SongSource
 import com.eq.jh.earthquakeplayer2.playback.data.VideoSource
 import com.eq.jh.earthquakeplayer2.playback.player.EarthquakePlaybackPreparer
 import com.eq.jh.earthquakeplayer2.playback.player.EarthquakePlayer
+import com.eq.jh.earthquakeplayer2.playback.player.EarthquakeQueueNavigator
 import com.eq.ljh.flags.constants.MediaBrowserIdConstant
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +46,11 @@ class MusicService : MediaBrowserServiceCompat() {
         const val TAG = "MusicService"
     }
 
+    private lateinit var notificationManager: NotificationManagerCompat
+    private lateinit var notificationBuilder: NotificationBuilder
     private lateinit var packageValidator: PackageValidator
+
+    private var isForegroundService = false
 
     private val songSource: SongSource by lazy {
         SongSource(context = this)
@@ -58,13 +68,6 @@ class MusicService : MediaBrowserServiceCompat() {
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var mediaController: MediaControllerCompat
     private lateinit var mediaSessionConnector: MediaSessionConnector
-
-    @Suppress("PropertyName")
-    val EMPTY_PLAYBACK_STATE: PlaybackStateCompat = PlaybackStateCompat.Builder()
-        .setState(PlaybackStateCompat.STATE_NONE, 0, 0f)
-        .build()
-
-//    private var isPrepared = false
 
     private fun createPlayer(): EarthquakePlayer {
         Log.d(TAG, "createPlayer")
@@ -101,26 +104,89 @@ class MusicService : MediaBrowserServiceCompat() {
             it.registerCallback(object : MediaControllerCompat.Callback() {
                 override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
                     Log.d(TAG, "MediaControllerCallback onMetadataChanged metadata : $metadata")
+                    mediaController.playbackState?.let { state ->
+                        serviceScope.launch {
+                            updateNotification(state)
+                        }
+                    }
                 }
 
                 override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-                    when (state?.state) {
-                        PlaybackStateCompat.STATE_NONE -> {
-                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_NONE")
-                        }
-                        PlaybackStateCompat.STATE_BUFFERING -> {
-                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_BUFFERING")
-                        }
-                        PlaybackStateCompat.STATE_PLAYING -> {
-                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_PLAYING")
-                        }
-                        PlaybackStateCompat.STATE_STOPPED -> {
-                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_STOPPED")
-                        }
-                        PlaybackStateCompat.STATE_PAUSED -> {
-                            Log.d(TAG, "createMediaController onPlaybackStateChanged STATE_PAUSED")
+                    Log.d(TAG, "MediaControllerCallback onPlaybackStateChanged state : $state")
+                    state?.let { state ->
+                        serviceScope.launch {
+                            updateNotification(state)
                         }
                     }
+                }
+
+                private suspend fun updateNotification(state: PlaybackStateCompat) {
+                    val updatedState = state.state
+                    Log.d(TAG, "updateNotification state : $state")
+
+                    // Skip building a notification when state is "none" and metadata is null.
+                    val notification = if (mediaController.metadata != null && updatedState != PlaybackStateCompat.STATE_NONE) {
+                        notificationBuilder.buildNotification(mediaSession.sessionToken)
+                    } else {
+                        null
+                    }
+
+                    when (updatedState) {
+                        PlaybackStateCompat.STATE_BUFFERING,
+                        PlaybackStateCompat.STATE_PLAYING -> {
+                            /**
+                             * This may look strange, but the documentation for [Service.startForeground]
+                             * notes that "calling this method does *not* put the service in the started
+                             * state itself, even though the name sounds like it."
+                             */
+                            if (notification != null) {
+                                notificationManager.notify(NOW_PLAYING_NOTIFICATION, notification)
+
+                                if (!isForegroundService) {
+                                    ContextCompat.startForegroundService(applicationContext, Intent(applicationContext, this@MusicService.javaClass))
+                                    startForeground(NOW_PLAYING_NOTIFICATION, notification)
+                                    isForegroundService = true
+                                }
+                            }
+                        }
+                        else -> {
+                            if (isForegroundService) {
+                                stopForeground(false)
+                                isForegroundService = false
+
+                                // If playback has ended, also stop the service.
+                                if (updatedState == PlaybackStateCompat.STATE_NONE) {
+                                    stopSelf()
+                                }
+
+                                if (notification != null) {
+                                    notificationManager.notify(NOW_PLAYING_NOTIFICATION, notification)
+                                } else {
+                                    removeNowPlayingNotification()
+                                }
+                            }
+                        }
+                    }
+                }
+
+                /**
+                 * Removes the [NOW_PLAYING_NOTIFICATION] notification.
+                 *
+                 * Since `stopForeground(false)` was already called (see
+                 * [MediaControllerCallback.onPlaybackStateChanged], it's possible to cancel the notification
+                 * with `notificationManager.cancel(NOW_PLAYING_NOTIFICATION)` if minSdkVersion is >=
+                 * [Build.VERSION_CODES.LOLLIPOP].
+                 *
+                 * Prior to [Build.VERSION_CODES.LOLLIPOP], notifications associated with a foreground
+                 * service remained marked as "ongoing" even after calling [Service.stopForeground],
+                 * and cannot be cancelled normally.
+                 *
+                 * Fortunately, it's possible to simply call [Service.stopForeground] a second time, this
+                 * time with `true`. This won't change anything about the service's state, but will simply
+                 * remove the notification.
+                 */
+                private fun removeNowPlayingNotification() {
+                    stopForeground(true)
                 }
             })
         }
@@ -134,6 +200,7 @@ class MusicService : MediaBrowserServiceCompat() {
 
             it.setPlayer(player.getPlayer())
             it.setPlaybackPreparer(playbackPreparer)
+            it.setQueueNavigator(EarthquakeQueueNavigator(mediaController))
         }
         return mediaSessionConnector
     }
@@ -157,6 +224,8 @@ class MusicService : MediaBrowserServiceCompat() {
          * [MediaBrowserCompat.ConnectionCallback.onConnectionFailed].)
          */
 
+        notificationBuilder = NotificationBuilder(this)
+        notificationManager = NotificationManagerCompat.from(this)
         packageValidator = PackageValidator(this, R.xml.allowed_media_browser_callers)
     }
 

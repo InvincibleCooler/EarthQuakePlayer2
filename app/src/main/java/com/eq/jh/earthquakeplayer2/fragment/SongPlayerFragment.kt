@@ -20,6 +20,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.constants.DebugConstant
 import com.eq.jh.earthquakeplayer2.constants.KeyConstant
@@ -125,6 +126,7 @@ class SongPlayerFragment : BaseFragment() {
             when (state?.state) {
                 PlaybackStateCompat.STATE_NONE -> {
                     Log.d(TAG, "onPlaybackStateChanged STATE_NONE")
+                    removeFragment(this@SongPlayerFragment, TAG)
                 }
                 PlaybackStateCompat.STATE_BUFFERING -> {
                     Log.d(TAG, "onPlaybackStateChanged STATE_BUFFERING")
@@ -153,7 +155,7 @@ class SongPlayerFragment : BaseFragment() {
                         SongSingleton.setCurrentIndex(index)
                         Log.d(TAG, "STATE_STOPPED size : $size, index : $index")
 
-                        prepareUpdateUi()
+                        prepareMediaSource()
 
                         isAlreadyPlayed = false
                         isAlreadyStopped = true
@@ -241,9 +243,7 @@ class SongPlayerFragment : BaseFragment() {
                     val songName = data?.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
                     val artistName = data?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
 
-//                    context?.let {
-//                        Glide.with(it).load(albumArtUri).into(vh.thumbIv)
-//                    }
+                    Glide.with(requireActivity()).load(albumArtUri).into(vh.thumbIv)
 
                     vh.songNameTv.text = songName
                     vh.artistNameTv.text = artistName
@@ -277,7 +277,7 @@ class SongPlayerFragment : BaseFragment() {
                                 index--
                             }
                             SongSingleton.setCurrentIndex(index)
-                            prepareUpdateUi()
+                            prepareMediaSource()
                         }
 
                         override fun onPlayClick() {
@@ -300,7 +300,7 @@ class SongPlayerFragment : BaseFragment() {
                                 index++
                             }
                             SongSingleton.setCurrentIndex(index)
-                            prepareUpdateUi()
+                            prepareMediaSource()
                         }
 
                     })
@@ -329,7 +329,7 @@ class SongPlayerFragment : BaseFragment() {
         }
     }
 
-    private fun prepareUpdateUi() {
+    private fun prepareMediaSource() {
         mediaController?.transportControls?.playFromUri(getCurrentUri(), null)
     }
 

@@ -16,6 +16,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.eq.jh.earthquakeplayer2.R
 import com.eq.jh.earthquakeplayer2.constants.ContentType
 import com.eq.jh.earthquakeplayer2.constants.KeyConstant
@@ -159,9 +160,8 @@ class SongFragment : BaseFragment() {
                     val contentUri = Uri.parse(data?.getString(KeyConstant.KEY_CUSTOM_METADATA_TRACK_SOURCE))
                     val albumArtUri = data?.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI)
 
-//                    activity?.let {
-//                        Glide.with(it).load(albumArtUri).into(vh.thumbIv)
-//                    }
+                    Glide.with(requireActivity()).load(albumArtUri).into(vh.thumbIv)
+
                     vh.songNameTv.text = songName
                     vh.artistNameTv.text = artistName
 
