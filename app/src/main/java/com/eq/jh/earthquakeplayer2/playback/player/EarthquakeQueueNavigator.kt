@@ -23,6 +23,10 @@ import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
  *
  */
 class EarthquakeQueueNavigator(private val mediaController: MediaControllerCompat) : MediaSessionConnector.QueueNavigator {
+    companion object {
+        private const val TAG = "QueueNavigator"
+    }
+
     override fun onSkipToQueueItem(player: Player, controlDispatcher: ControlDispatcher, id: Long) {
     }
 
@@ -35,7 +39,7 @@ class EarthquakeQueueNavigator(private val mediaController: MediaControllerCompa
         (PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or PlaybackStateCompat.ACTION_SKIP_TO_NEXT)
 
     override fun onSkipToNext(player: Player, controlDispatcher: ControlDispatcher) {
-        Log.d(MusicService.TAG, "onSkipToNext")
+        Log.d(TAG, "onSkipToNext")
         val size = SongSingleton.getSize()
         var index = SongSingleton.getCurrentIndex()
         if (index == size - 1) {
@@ -50,7 +54,7 @@ class EarthquakeQueueNavigator(private val mediaController: MediaControllerCompa
     override fun getActiveQueueItemId(player: Player?) = -1L
 
     override fun onSkipToPrevious(player: Player, controlDispatcher: ControlDispatcher) {
-        Log.d(MusicService.TAG, "onSkipToPrevious")
+        Log.d(TAG, "onSkipToPrevious")
         val size = SongSingleton.getSize()
         var index = SongSingleton.getCurrentIndex()
         if (index == 0) {

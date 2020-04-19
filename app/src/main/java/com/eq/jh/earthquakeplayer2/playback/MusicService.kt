@@ -72,7 +72,7 @@ class MusicService : MediaBrowserServiceCompat() {
     private fun createPlayer(): EarthquakePlayer {
         Log.d(TAG, "createPlayer")
         player = EarthquakePlayer(this).also {
-            it.setCallback(object : EarthquakePlayer.ExoPlayerCallback {
+            it.setCallback(object : EarthquakePlayer.ExoPlayerCallback { // for debugging
                 override fun onCompletion() {
                     if (DebugConstant.DEBUG) {
                         Log.d(TAG, "onCompletion()")

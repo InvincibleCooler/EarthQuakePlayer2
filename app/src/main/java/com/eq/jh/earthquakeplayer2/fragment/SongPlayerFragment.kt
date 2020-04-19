@@ -107,7 +107,7 @@ class SongPlayerFragment : BaseFragment() {
     private var isAlreadyStopped = false
     private var isAlreadyPaused = false
 
-    private fun initCount() {
+    private fun initState() {
         isAlreadyPlayed = false
         isAlreadyStopped = false
         isAlreadyPaused = false
@@ -120,11 +120,8 @@ class SongPlayerFragment : BaseFragment() {
 
     private val mediaControllerCallback = object : MediaControllerCompat.Callback() {
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-            if (DebugConstant.DEBUG) {
-                Log.d(TAG, "MediaControllerCallback onPlaybackStateChanged state : $state")
-            }
             when (state?.state) {
-                PlaybackStateCompat.STATE_NONE -> {
+                PlaybackStateCompat.STATE_NONE -> { // notification에서 stop을 누른경우
                     Log.d(TAG, "onPlaybackStateChanged STATE_NONE")
                     removeFragment(this@SongPlayerFragment, TAG)
                 }
@@ -142,20 +139,10 @@ class SongPlayerFragment : BaseFragment() {
                         isAlreadyPaused = false
                     }
                 }
-                PlaybackStateCompat.STATE_STOPPED -> {
+                PlaybackStateCompat.STATE_STOPPED -> { // 한곡이 끝나면 호출됨 (MediaSessionConnector에서 PlaybackStateCompat.STATE_STOPPED 가 Exoplayer의 Player.STATE_ENDED 와 연결됨)
                     if (!isAlreadyStopped) {
                         Log.d(TAG, "onPlaybackStateChanged STATE_STOPPED")
-                        val size = SongSingleton.getSize()
-                        var index = SongSingleton.getCurrentIndex()
-                        if (index == (size - 1)) {
-                            index = 0
-                        } else {
-                            index++
-                        }
-                        SongSingleton.setCurrentIndex(index)
-                        Log.d(TAG, "STATE_STOPPED size : $size, index : $index")
-
-                        prepareMediaSource()
+                        mediaController?.transportControls?.skipToNext()
 
                         isAlreadyPlayed = false
                         isAlreadyStopped = true
@@ -182,11 +169,12 @@ class SongPlayerFragment : BaseFragment() {
             }
         }
 
+        // 곡이 변경되면 호출됨
         override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
             Log.d(TAG, "onMetadataChanged metadata : $metadata")
             if (metadata != null) {
-                songPlayerAdapter.notifyDataSetChanged()
-                mediaController?.transportControls?.seekTo(0)
+                songPlayerAdapter.notifyDataSetChanged() // ui업데이트
+//                mediaController?.transportControls?.seekTo(0)
             }
         }
 
@@ -269,15 +257,7 @@ class SongPlayerFragment : BaseFragment() {
                 controlView.run {
                     setSongControlViewCallback(object : SongPlayerControlView.SongControlViewCallback {
                         override fun onPreviousClick() {
-                            val size = SongSingleton.getSize()
-                            var index = SongSingleton.getCurrentIndex()
-                            if (index == 0) {
-                                index = size - 1
-                            } else {
-                                index--
-                            }
-                            SongSingleton.setCurrentIndex(index)
-                            prepareMediaSource()
+                            mediaController?.transportControls?.skipToPrevious()
                         }
 
                         override fun onPlayClick() {
@@ -292,17 +272,8 @@ class SongPlayerFragment : BaseFragment() {
                         }
 
                         override fun onNextClick() {
-                            val size = SongSingleton.getSize()
-                            var index = SongSingleton.getCurrentIndex()
-                            if (index == size - 1) {
-                                index = 0
-                            } else {
-                                index++
-                            }
-                            SongSingleton.setCurrentIndex(index)
-                            prepareMediaSource()
+                            mediaController?.transportControls?.skipToNext()
                         }
-
                     })
                 }
 
@@ -320,17 +291,13 @@ class SongPlayerFragment : BaseFragment() {
                         }
 
                         override fun onStopTrackingTouch(seekBar: SeekBar) {
-                            initCount()
+                            initState()
                             mediaController?.transportControls?.seekTo(seekBar.progress.toLong())
                         }
                     })
                 }
             }
         }
-    }
-
-    private fun prepareMediaSource() {
-        mediaController?.transportControls?.playFromUri(getCurrentUri(), null)
     }
 
     private fun getCurrentMediaMetadata(): MediaMetadataCompat? {
