@@ -99,11 +99,13 @@ class MusicService : MediaBrowserServiceCompat() {
         return mediaSession
     }
 
+    private var prePlaybackState = PlaybackStateCompat.STATE_NONE
+
     private fun createMediaController(): MediaControllerCompat {
         mediaController = MediaControllerCompat(this, mediaSession).also {
             it.registerCallback(object : MediaControllerCompat.Callback() {
                 override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
-                    Log.d(TAG, "MediaControllerCallback onMetadataChanged metadata : $metadata")
+                    Log.d(TAG, "MediaControllerCallback onMetadataChanged")
                     mediaController.playbackState?.let { state ->
                         serviceScope.launch {
                             updateNotification(state)
@@ -112,17 +114,24 @@ class MusicService : MediaBrowserServiceCompat() {
                 }
 
                 override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-                    Log.d(TAG, "MediaControllerCallback onPlaybackStateChanged state : $state")
-                    state?.let { state ->
-                        serviceScope.launch {
-                            updateNotification(state)
+                    val currentPlaybackState = state?.state ?: PlaybackStateCompat.STATE_NONE
+
+                    if (prePlaybackState != currentPlaybackState) { // onPlaybackStateChanged 가 두번이상씩 호출되는 경우가 있어서 이렇게 처리함
+                        if (DebugConstant.DEBUG) {
+                            Log.d(TAG, "MediaControllerCallback prePlaybackState state : $prePlaybackState")
+                            Log.d(TAG, "MediaControllerCallback currentPlaybackState state : $currentPlaybackState")
+                        }
+                        state?.let { state ->
+                            serviceScope.launch {
+                                updateNotification(state)
+                            }
                         }
                     }
+                    prePlaybackState = currentPlaybackState
                 }
 
                 private suspend fun updateNotification(state: PlaybackStateCompat) {
                     val updatedState = state.state
-                    Log.d(TAG, "updateNotification state : $state")
 
                     // Skip building a notification when state is "none" and metadata is null.
                     val notification = if (mediaController.metadata != null && updatedState != PlaybackStateCompat.STATE_NONE) {
@@ -134,6 +143,7 @@ class MusicService : MediaBrowserServiceCompat() {
                     when (updatedState) {
                         PlaybackStateCompat.STATE_BUFFERING,
                         PlaybackStateCompat.STATE_PLAYING -> {
+                            Log.d(TAG, "updateNotification PlaybackStateCompat.STATE_BUFFERING, PlaybackStateCompat.STATE_PLAYING")
                             /**
                              * This may look strange, but the documentation for [Service.startForeground]
                              * notes that "calling this method does *not* put the service in the started
@@ -149,20 +159,22 @@ class MusicService : MediaBrowserServiceCompat() {
                                 }
                             }
                         }
+                        PlaybackStateCompat.STATE_NONE -> {
+                            if (isForegroundService) {
+                                Log.d(TAG, "updateNotification PlaybackStateCompat.STATE_NONE : $isForegroundService")
+                                isForegroundService = false
+                                removeNowPlayingNotification() // just in case
+                                stopSelf()
+                            }
+                        }
                         else -> {
+                            Log.d(TAG, "updateNotification state : $updatedState")
                             if (isForegroundService) {
                                 stopForeground(false)
                                 isForegroundService = false
 
-                                // If playback has ended, also stop the service.
-                                if (updatedState == PlaybackStateCompat.STATE_NONE) {
-                                    stopSelf()
-                                }
-
                                 if (notification != null) {
                                     notificationManager.notify(NOW_PLAYING_NOTIFICATION, notification)
-                                } else {
-                                    removeNowPlayingNotification()
                                 }
                             }
                         }

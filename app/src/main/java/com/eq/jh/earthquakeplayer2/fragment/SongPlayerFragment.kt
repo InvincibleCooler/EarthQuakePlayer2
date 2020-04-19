@@ -79,6 +79,7 @@ class SongPlayerFragment : BaseFragment() {
                         val contentUri = getCurrentUri()
                         if (contentUri != null) {
                             transportControls?.playFromUri(contentUri, null)
+                            transportControls?.play()
                         }
                     }
                 }
@@ -113,11 +114,6 @@ class SongPlayerFragment : BaseFragment() {
         isAlreadyPaused = false
     }
 
-    /**
-     * fragment시작과 동시에 플레이 시키기 위해서
-     */
-    private var isFirstStarted = false
-
     private val mediaControllerCallback = object : MediaControllerCompat.Callback() {
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
             when (state?.state) {
@@ -150,12 +146,6 @@ class SongPlayerFragment : BaseFragment() {
                     }
                 }
                 PlaybackStateCompat.STATE_PAUSED -> {
-                    if (!isFirstStarted) {
-                        Log.d(TAG, "onPlaybackStateChanged STATE_PAUSED isFirstStarted")
-                        isFirstStarted = true
-                        mediaController?.transportControls?.play()
-                    }
-
                     if (!isAlreadyPaused) {
                         Log.d(TAG, "onPlaybackStateChanged STATE_PAUSED")
                         controlView.togglePlayOrPause(false)

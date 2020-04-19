@@ -9,7 +9,6 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import com.eq.jh.earthquakeplayer2.constants.KeyConstant
 import com.eq.jh.earthquakeplayer2.playback.KEY_MEDIA_METADATA
-import com.eq.jh.earthquakeplayer2.playback.MusicService
 import com.eq.jh.earthquakeplayer2.playback.data.SongSingleton
 import com.google.android.exoplayer2.ControlDispatcher
 import com.google.android.exoplayer2.Player
