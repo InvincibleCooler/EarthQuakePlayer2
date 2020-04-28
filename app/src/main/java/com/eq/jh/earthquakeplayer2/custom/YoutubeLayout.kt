@@ -44,7 +44,7 @@ class YoutubeLayout : ViewGroup {
     interface OnDraggableListener {
         fun onMaximized()
         fun onMinimized()
-        fun onDragStart()
+        fun onSettle()
     }
 
     private var onDraggableListener: OnDraggableListener? = null
@@ -197,7 +197,7 @@ class YoutubeLayout : ViewGroup {
                  * ViewDragHelper.STATE_DRAGGING 처리하면 ViewDragHelper 의 shouldInterceptTouchEvent 에서 intercept를 true해버려서 자식뷰 이벤트를 가로챔
                  */
                 if (state == ViewDragHelper.STATE_SETTLING) {
-                    onDraggableListener?.onDragStart()
+                    onDraggableListener?.onSettle()
                 }
                 prevDragState = state
             }
@@ -524,7 +524,7 @@ class YoutubeLayout : ViewGroup {
     }
 
     /**
-     * seek바 움직일때 뷰가 계속 흔들려서 처리함 (카카오 TV참고함)
+     * seek바 움직일때 뷰가 계속 흔들려서 처리함 (어떻게 해야할까 생각 하다가 카카오 TV가 너무 당연하게 잘되어 있으서 참고함)
      */
     private val disableDraggingChecker: RetrieveItemValue<MotionEvent, Boolean> = object : RetrieveItemValue<MotionEvent, Boolean> {
         private val DISABLE_TOUCH_TH = 50

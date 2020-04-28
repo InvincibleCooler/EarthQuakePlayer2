@@ -154,7 +154,7 @@ class VideoPlayerFragment : BaseFragment() {
                 }
             }
 
-            override fun onDragStart() {
+            override fun onSettle() {
                 if (closeIv.visibility == View.VISIBLE) {
                     closeIv.visibility = View.INVISIBLE
                 }
