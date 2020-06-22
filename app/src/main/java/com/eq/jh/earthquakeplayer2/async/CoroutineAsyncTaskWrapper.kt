@@ -34,7 +34,7 @@ abstract class CoroutineAsyncTaskWrapper<T, R> : CoroutineScope {
         }
     }
 
-    abstract suspend fun backgroundWork(param: T? = null): R
+    abstract suspend fun backgroundWork(param: T? = null): R?
 
     open fun postTask(result: R? = null) {
     }
