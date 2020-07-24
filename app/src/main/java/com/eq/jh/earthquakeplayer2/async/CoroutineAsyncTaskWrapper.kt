@@ -6,10 +6,8 @@ import kotlinx.coroutines.*
 
 /**
  * Copyright (C) 2020 Kakao Inc. All rights reserved.
- * Created by Invincible on 19/06/2020
- * T는 파라미터, R은 Return
  */
-abstract class CoroutineAsyncTaskWrapper<T, R> : CoroutineScope {
+abstract class CoroutineAsyncTaskWrapper<Param, Return> : CoroutineScope {
     companion object {
         private const val TAG = "CoroutineAsyncTaskWrapper"
     }
@@ -17,7 +15,7 @@ abstract class CoroutineAsyncTaskWrapper<T, R> : CoroutineScope {
     private var job = Job()
     override val coroutineContext = Dispatchers.Main + job // preTask, postTask에서 UI처리가 있을수 있기 때문에 일단 Dispatcher는 Main으로 설정함
 
-    private fun startTask(param: T? = null) {
+    private fun startTask(param: Param? = null) {
         launch {
             preTask()
             val result = doInBackground(param)
@@ -28,22 +26,22 @@ abstract class CoroutineAsyncTaskWrapper<T, R> : CoroutineScope {
     open fun preTask() {
     }
 
-    private suspend fun doInBackground(param: T? = null): R? {
+    private suspend fun doInBackground(param: Param? = null): Return? {
         return withContext(Dispatchers.IO) {
             backgroundWork(param)
         }
     }
 
-    abstract suspend fun backgroundWork(param: T? = null): R?
+    abstract suspend fun backgroundWork(param: Param? = null): Return?
 
-    open fun postTask(result: R? = null) {
+    open fun postTask(result: Return? = null) {
     }
 
     fun cancel() {
         job.cancel()
     }
 
-    fun execute(param: T? = null) {
+    fun execute(param: Param? = null) {
         startTask(param)
     }
 }
